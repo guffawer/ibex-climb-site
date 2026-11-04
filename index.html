@@ -1,0 +1,1240 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Ibex Climb</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: full-bleed portrait canvas; HTML only for title and death panels. Look: faceted alpine dusk (approved art board, round 1). */
+:root{
+  --ink:#0d131b;
+  --slate:#1c2733;
+  --rock:#3b4856;
+  --snow:#eef3f7;
+  --ice:#8fd3e8;
+  --glow:#f2a65a;
+  --danger:#e5484d;
+  --font-display:'Barlow Condensed','Arial Narrow',Arial,sans-serif;
+  --font-data:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{
+  background:var(--ink);color:var(--snow);
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:0;
+  overflow:hidden;
+  font-family:var(--font-data);
+  -webkit-user-select:none;user-select:none;
+}
+#stage{position:relative;height:100%;max-width:520px;margin:0 auto}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+.panel{
+  position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:14px;
+  padding:24px 8px;background:linear-gradient(180deg,rgba(13,19,27,.62) 0%,rgba(13,19,27,.84) 50%,rgba(13,19,27,.3) 100%);
+}
+#title{justify-content:flex-start;padding-top:max(110px,24vh);background:linear-gradient(180deg,rgba(13,19,27,.62) 0%,rgba(13,19,27,.84) 40%,rgba(13,19,27,0) 74%)}
+#dead{justify-content:flex-start;padding-top:max(100px,20vh)}
+.panel[hidden]{display:none!important}
+.panel h1{margin:0;font-family:var(--font-display);font-weight:700;font-size:clamp(44px,14vw,72px);line-height:.92;letter-spacing:.01em;text-transform:uppercase;text-wrap:balance}
+.panel h1 em{font-style:normal;color:var(--glow)}
+.panel p{margin:0;max-width:34ch;font-size:13px;line-height:1.6;color:#c4d0da}
+.panel .stat{font-family:var(--font-display);font-size:28px;letter-spacing:.04em;text-transform:uppercase;color:var(--snow)}
+.panel .stat b{color:var(--glow);font-weight:700}
+button{
+  font-family:var(--font-display);font-weight:700;font-size:22px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink);background:var(--glow);border:0;padding:12px 26px;min-height:48px;cursor:pointer;border-radius:3px;
+}
+button:focus-visible{outline:3px solid var(--ice);outline-offset:3px}
+#mute{position:absolute;right:0;top:calc(10px + env(safe-area-inset-top,0px));min-height:36px;padding:6px 12px;font-size:14px;background:rgba(238,243,247,.14);color:var(--snow)}
+
+#levels,#intro,#win{justify-content:flex-start;padding-top:max(70px,11vh)}
+.lgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;width:100%}
+.lb{min-height:66px;padding:6px 0;font-size:28px;letter-spacing:.02em;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;line-height:1}
+.lb small{font-family:var(--font-data);font-size:10px;letter-spacing:.08em;font-weight:500;color:var(--ink)}
+.lb[disabled]{background:rgba(238,243,247,.1);color:rgba(238,243,247,.35);cursor:default}
+.lb[disabled] small{color:rgba(238,243,247,.35)}
+button.alt{background:rgba(238,243,247,.14);color:var(--snow)}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.kicker{font-family:var(--font-data);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ice)}
+.panel .stars{font-family:var(--font-display);font-size:44px;line-height:1;color:var(--glow);letter-spacing:.12em}
+</style>
+
+<div id="stage">
+  <canvas id="cv" aria-label="Ibex climbing game"></canvas>
+  <button id="mute" type="button" hidden>Sound on</button>
+  <div id="title" class="panel">
+    <h1>Ibex<br><em>Climb</em></h1>
+    <p>Press anywhere and pull back, like a slingshot. Release to leap. Ledges crumble, ice slides, wind pushes. A snow leopard is climbing after you.</p>
+    <button id="go" type="button">Start climbing</button>
+  </div>
+  <div id="dead" class="panel" hidden>
+    <div class="kicker" id="dK">Endless climb</div>
+    <h1 id="why">Fell</h1>
+    <div class="stat" id="dS1">Altitude <b>0</b> m</div>
+    <div class="stat" id="dS2">Best <b>0</b> m</div>
+    <div class="row"><button id="again" type="button">Retry</button><button id="dLv" type="button" class="alt">Levels</button></div>
+  </div>
+  <div id="levels" class="panel" hidden>
+    <div class="kicker">The Snow Face</div>
+    <h1>Choose <em>level</em></h1>
+    <div id="lgrid" class="lgrid"></div>
+    <div class="row"><button id="endless" type="button" class="alt">Endless climb</button><button id="unl" type="button" class="alt">Test: unlock all</button></div>
+  </div>
+  <div id="intro" class="panel" hidden>
+    <div class="kicker" id="iK">Level 1</div>
+    <h1 id="iN">First Steps</h1>
+    <div class="stat" id="iO">Reach 40 m</div>
+    <p id="iT"></p>
+    <div class="row"><button id="iGo" type="button">Climb</button><button id="iBack" type="button" class="alt">Levels</button></div>
+  </div>
+  <div id="win" class="panel" hidden>
+    <div class="kicker" id="wK">Level 1 cleared</div>
+    <h1 id="wH">Summit</h1>
+    <div class="stars" id="wS">&#9733;&#9733;&#9733;</div>
+    <div class="stat">Time <b id="wT">0</b> s</div>
+    <p id="wP"></p>
+    <div class="row"><button id="wNext" type="button">Next level</button><button id="wAgain" type="button" class="alt">Replay</button><button id="wLv" type="button" class="alt">Levels</button></div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var cv=document.getElementById('cv'), ctx=cv.getContext('2d'), stage=document.getElementById('stage');
+var titleP=document.getElementById('title'), deadP=document.getElementById('dead');
+var muteB=document.getElementById('mute');
+var W=360, S=1, H=640, dpr=1;
+var GR=1500, MAXV=860, PULL=120;
+var deadWhy='', dprCap=2, slowN=0;
+var st='title';
+var g, ledges, camY, leop, wind, windTarget, windT, bestM, bestSaved, genY, lastX, debris, shake, tAll, idle, aim, growlT, stepT;
+bestSaved=0;
+try{ bestSaved=parseInt(localStorage.getItem('ibexBest')||'0',10)||0; }catch(e){}
+
+function resize(){
+  var r=stage.getBoundingClientRect();
+  dpr=Math.min(window.devicePixelRatio||1,dprCap);
+  cv.width=Math.max(1,Math.round(r.width*dpr));
+  cv.height=Math.max(1,Math.round(r.height*dpr));
+  S=r.width/W; H=r.height/S;
+}
+window.addEventListener('resize',resize);
+
+function rnd(a,b){return a+Math.random()*(b-a);}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+function hex(h){return [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];}
+function mix(a,b,t){var x=hex(a),y=hex(b);return 'rgb('+Math.round(x[0]+(y[0]-x[0])*t)+','+Math.round(x[1]+(y[1]-x[1])*t)+','+Math.round(x[2]+(y[2]-x[2])*t)+')';}
+function hash(n){var s=Math.sin(n*127.1)*43758.5453;return s-Math.floor(s);}
+
+/* ---------- audio ---------- */
+/*AUDIO-BEGIN*/
+/* Every effect is built from filtered noise, a short pitched body and layered voices, so nothing is a bare beep.
+   All sounds go through one bus with a gentle compressor so stacked events never clip a phone speaker. */
+var ac=null, windG=null, windF=null, muted=false, sfx=null, noiseBuf=null, driveC=null;
+function initAudio(){
+  if(ac) return;
+  try{
+    ac=new (window.AudioContext||window.webkitAudioContext)();
+    var len=ac.sampleRate*2, buf=ac.createBuffer(1,len,ac.sampleRate), d=buf.getChannelData(0), i;
+    for(i=0;i<len;i++) d[i]=Math.random()*2-1;
+    noiseBuf=buf;
+    var src=ac.createBufferSource(); src.buffer=buf; src.loop=true;
+    windF=ac.createBiquadFilter(); windF.type='lowpass'; windF.frequency.value=420;
+    windG=ac.createGain(); windG.gain.value=0.02;
+    src.connect(windF); windF.connect(windG); windG.connect(ac.destination); src.start();
+    var cp=ac.createDynamicsCompressor();
+    cp.threshold.value=-16; cp.knee.value=12; cp.ratio.value=5; cp.attack.value=0.003; cp.release.value=0.18;
+    sfx=ac.createGain(); sfx.gain.value=0.9; sfx.connect(cp); cp.connect(ac.destination);
+    driveC=new Float32Array(257);
+    for(i=0;i<257;i++) driveC[i]=Math.tanh(3.2*(i/128-1));
+    try{ if(ac.state==='suspended') ac.resume(); }catch(e2){}
+    muteB.hidden=false;
+  }catch(e){ ac=null; }
+}
+muteB.addEventListener('click',function(){
+  muted=!muted; muteB.textContent=muted?'Sound off':'Sound on';
+  if(windG) windG.gain.value=muted?0:0.03;
+});
+function buzz(p){ try{ if(navigator.vibrate) navigator.vibrate(p); }catch(e){} }
+
+function sfxOK(){ return ac&&sfx&&noiseBuf&&!muted; }
+function T0(at){ return ac.currentTime+(at||0); }
+/* filtered noise burst: filter type, sweep f0 to f1, Q, peak volume, attack, total length */
+function nz(at,dur,type,f0,f1,q,vol,atk){
+  var t=T0(at), s=ac.createBufferSource(), fl=ac.createBiquadFilter(), g=ac.createGain();
+  s.buffer=noiseBuf; s.loop=true; fl.type=type; fl.Q.value=q;
+  fl.frequency.setValueAtTime(f0,t);
+  if(f1!==f0) fl.frequency.exponentialRampToValueAtTime(f1,t+dur);
+  g.gain.setValueAtTime(0.0001,t);
+  g.gain.exponentialRampToValueAtTime(vol,t+Math.max(0.003,atk));
+  g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  s.connect(fl); fl.connect(g); g.connect(sfx);
+  s.start(t,Math.random()*1.4); s.stop(t+dur+0.03);
+}
+/* short pitched body that falls in pitch: the knock under a thud */
+function body(at,f0,f1,dur,vol){
+  var t=T0(at), o=ac.createOscillator(), g=ac.createGain();
+  o.type='sine'; o.frequency.setValueAtTime(f0,t); o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);
+  g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.connect(g); g.connect(sfx); o.start(t); o.stop(t+dur+0.02);
+}
+
+/* hoof or paw on rock and snow: low knock, muffled snow thump, a little grit */
+function sThud(vol,pitch,at){
+  if(!sfxOK()) return;
+  try{
+    body(at,pitch*1.5,pitch*0.6,0.12,vol*0.45);
+    nz(at,0.12,'lowpass',320,110,0.7,vol*0.7,0.004);
+    nz(at,0.06,'bandpass',2400,1600,0.9,vol*0.28,0.002);
+    nz(at,0.07,'bandpass',720,380,1.1,vol*1.5,0.002); /* the knock a phone speaker can actually play */
+  }catch(e){}
+}
+function sLand(type){
+  if(!sfxOK()) return;
+  try{
+    sThud(0.2,type===2?150:112);
+    if(type===2) nz(0,0.12,'bandpass',4300,3700,7,0.05,0.002); /* ice ping */
+    if(type===1) nz(0.02,0.18,'bandpass',900,400,1.2,0.08,0.01); /* gravel shifting */
+  }catch(e){}
+}
+/* the ibex pushing off: breath of air, a scrape of hoof, a short push */
+function sLeap(){
+  if(!sfxOK()) return;
+  try{
+    nz(0,0.17,'bandpass',500,1500,1.2,0.12,0.04);
+    nz(0,0.05,'lowpass',900,500,0.8,0.1,0.003);
+    body(0,150,70,0.09,0.08);
+  }catch(e){}
+}
+/* ledge breaking: a scatter of rock grains over a low rumble */
+function sCrumble(vol){
+  if(!sfxOK()) return;
+  try{
+    var k;
+    for(k=0;k<7;k++) nz(k*0.045+Math.random()*0.03,0.09+Math.random()*0.08,'bandpass',700+Math.random()*900,300,1.4,vol*(0.5+Math.random()*0.5),0.004);
+    nz(0,0.45,'lowpass',200,70,0.7,vol*1.1,0.02);
+    body(0.02,70,32,0.4,vol*0.8);
+  }catch(e){}
+}
+/* something big passing close: air sweeping past */
+function sWhoosh(){
+  if(!sfxOK()) return;
+  try{
+    nz(0,0.24,'bandpass',2200,480,1.1,0.2,0.03);
+    nz(0,0.16,'highpass',3200,3200,0.5,0.035,0.02);
+  }catch(e){}
+}
+/* claws scrabbling for grip */
+function sScrabble(vol){
+  if(!sfxOK()) return;
+  try{
+    var k;
+    for(k=0;k<5;k++) nz(k*0.05+Math.random()*0.02,0.05,'bandpass',3500+Math.random()*1500,2500,2,vol*0.24,0.002);
+    nz(0,0.2,'lowpass',600,300,0.8,vol*0.12,0.02);
+  }catch(e){}
+}
+
+/* big-cat voice: two rough saw voices and a sub, driven through a soft clipper, shaped by three vowel formants,
+   pulsed at the vocal-fold rate, with breath noise on top. o: dur, f0, f1 (pitch Hz), p0, p1 (pulse rate Hz),
+   vol, atk, rise (crescendo to the end), breath 0..1, fm0, fm1 (formant scale: jaw opening). */
+function voice(at,o){
+  var t=T0(at), e=t+o.dur, i;
+  var oa=ac.createOscillator(), ob=ac.createOscillator(), os=ac.createOscillator(), am=ac.createOscillator(), jt=ac.createOscillator();
+  var v=ac.createGain(), gs=ac.createGain(), pulse=ac.createGain(), amg=ac.createGain(), jg=ac.createGain();
+  var ws=ac.createWaveShaper(), mix=ac.createGain(), env=ac.createGain(), lp=ac.createBiquadFilter();
+  oa.type='sawtooth'; ob.type='sawtooth'; os.type='sine'; am.type='sawtooth'; jt.type='sine';
+  oa.frequency.setValueAtTime(o.f0,t); oa.frequency.exponentialRampToValueAtTime(o.f1,e);
+  ob.frequency.setValueAtTime(o.f0*1.017,t); ob.frequency.exponentialRampToValueAtTime(o.f1*1.017,e);
+  os.frequency.setValueAtTime(o.f0*0.5,t); os.frequency.exponentialRampToValueAtTime(o.f1*0.5,e);
+  am.frequency.setValueAtTime(o.p0,t); am.frequency.linearRampToValueAtTime(o.p1,e);
+  jt.frequency.value=9; jg.gain.value=28; jt.connect(jg); jg.connect(oa.detune); jg.connect(ob.detune); /* pitch wobble in cents: roughness */
+  gs.gain.value=0.7; v.gain.value=0.6;
+  oa.connect(v); ob.connect(v); os.connect(gs); gs.connect(v);
+  pulse.gain.value=0.62; amg.gain.value=0.38; am.connect(amg); amg.connect(pulse.gain);
+  v.connect(pulse); ws.curve=driveC; ws.oversample='2x'; pulse.connect(ws);
+  var F=[[430,3,2.2],[1000,3.5,1.7],[2400,4,0.8]], b, gg;
+  for(i=0;i<3;i++){
+    b=ac.createBiquadFilter(); gg=ac.createGain(); b.type='bandpass'; b.Q.value=F[i][1];
+    b.frequency.setValueAtTime(F[i][0]*o.fm0,t); b.frequency.linearRampToValueAtTime(F[i][0]*o.fm1,e);
+    gg.gain.value=F[i][2]; ws.connect(b); b.connect(gg); gg.connect(mix);
+  }
+  lp.type='lowpass'; lp.frequency.value=260; ws.connect(lp); var cg=ac.createGain(); cg.gain.value=0.3; lp.connect(cg); cg.connect(mix); /* chest: kept low, phone speakers cannot reproduce it */
+  var ns=ac.createBufferSource(), nb=ac.createBiquadFilter(), ng=ac.createGain(), ag=ac.createGain();
+  ns.buffer=noiseBuf; ns.loop=true; nb.type='bandpass'; nb.frequency.value=2800; nb.Q.value=0.8;
+  ng.gain.value=0.5*o.breath; ag.gain.value=0.5*o.breath; am.connect(ag); ag.connect(ng.gain);
+  ns.connect(nb); nb.connect(ng); ng.connect(env);
+  var hp=ac.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=110; mix.connect(hp); hp.connect(env);
+  env.gain.setValueAtTime(0.0001,t);
+  if(o.rise){
+    env.gain.exponentialRampToValueAtTime(o.vol*0.3,t+o.atk);
+    env.gain.exponentialRampToValueAtTime(o.vol,e-0.03);
+    env.gain.exponentialRampToValueAtTime(0.0001,e);
+  }else{
+    env.gain.exponentialRampToValueAtTime(o.vol,t+o.atk);
+    env.gain.exponentialRampToValueAtTime(0.0001,e);
+  }
+  env.connect(sfx);
+  oa.start(t); ob.start(t); os.start(t); am.start(t); jt.start(t); ns.start(t,Math.random()*1.4);
+  oa.stop(e+0.06); ob.stop(e+0.06); os.stop(e+0.06); am.stop(e+0.06); jt.stop(e+0.06); ns.stop(e+0.06);
+}
+/* pounce warning: the growl rises in pitch, pulse rate and volume over the whole 0.6 s and is cut at launch */
+function sWarn(dur){
+  if(!sfxOK()) return;
+  try{ voice(0,{dur:dur,f0:58,f1:94,p0:20,p1:40,vol:0.5,atk:0.1,rise:true,breath:0.4,fm0:0.85,fm1:1.3}); }catch(e){}
+}
+/* launch: an explosive snarl and the push-off */
+function sPounce(){
+  if(!sfxOK()) return;
+  try{
+    voice(0,{dur:0.4,f0:140,f1:68,p0:36,p1:20,vol:0.4,atk:0.01,rise:false,breath:0.7,fm0:1.35,fm1:0.9});
+    nz(0,0.3,'bandpass',500,1900,0.9,0.1,0.02);
+    sThud(0.12,92);
+  }catch(e){}
+}
+function sStumble(){
+  if(!sfxOK()) return;
+  try{ voice(0,{dur:0.3,f0:190,f1:105,p0:30,p1:18,vol:0.28,atk:0.01,rise:false,breath:0.8,fm0:1.4,fm1:1.0}); sScrabble(0.9); }catch(e){}
+}
+function sDeath(reason){
+  if(!sfxOK()) return;
+  try{
+    if(reason==='Caught'){
+      voice(0,{dur:0.5,f0:150,f1:60,p0:34,p1:18,vol:0.42,atk:0.01,rise:false,breath:0.75,fm0:1.3,fm1:0.85});
+      sThud(0.2,78);
+    }else{
+      nz(0,0.9,'bandpass',1400,200,0.9,0.22,0.05); /* the long fall */
+      body(0.5,90,40,0.6,0.1);
+    }
+  }catch(e){}
+}
+/* soft glassy ping: two sines and a tick of filtered noise, no buzzy waveform */
+function ping(at,f,vol){
+  var t=T0(at), k, o, g2, fs=[f,f*1.5,f*2.01], vs=[1,0.45,0.2];
+  for(k=0;k<3;k++){
+    o=ac.createOscillator(); g2=ac.createGain(); o.type='sine'; o.frequency.value=fs[k];
+    g2.gain.setValueAtTime(0.0001,t); g2.gain.exponentialRampToValueAtTime(vol*vs[k],t+0.006); g2.gain.exponentialRampToValueAtTime(0.0001,t+0.5-k*0.1);
+    o.connect(g2); g2.connect(sfx); o.start(t); o.stop(t+0.55);
+  }
+  nz(at,0.04,'bandpass',f*2.4,f*2,3,vol*0.5,0.002);
+}
+function sPick(){ if(!sfxOK()) return; try{ ping(0,1175,0.06); ping(0.07,1568,0.05); }catch(e){} }
+function sWin(){ if(!sfxOK()) return; try{ ping(0,659,0.07); ping(0.14,880,0.07); ping(0.28,1175,0.08); ping(0.28,587,0.05); nz(0,0.8,'bandpass',600,1500,0.8,0.05,0.25); }catch(e){} }
+/*AUDIO-END*/
+
+
+/* ---------- levels: the Snow Face, 10 steps ----------
+   Terrain t: gapMin + random * gapAdd = vertical gap (px, 8 px = 1 m); w = ledge width; jit = sideways jump between ledges;
+   hz0 = altitude (m) where crumbling (pc) and icy (pi) ledges start; wind = peak wind. A pair [a,b] ramps across the climb.
+   Leopard leo: on, pace (1 = the endless-mode pace). par = [seconds for 2 stars, seconds for 3 stars]. Layouts are seeded, so a retry is the same cliff. */
+var TESTBUILD=true;
+var LEVELS=[
+ {name:'First Steps',tip:'Press and pull back, release to leap. Land on the ledge above you.',type:'summit',goalM:40,
+  t:{gapMin:62,gapAdd:28,w:130,wMin:90,jit:110,hz0:999,pc:0,pi:0,wind:0},leo:{on:false,pace:1},par:[15,11]},
+ {name:'Loose Rock',tip:'Cracked ledges give way soon after you land. Do not wait on them.',type:'summit',goalM:60,
+  t:{gapMin:66,gapAdd:34,w:118,wMin:84,jit:130,hz0:8,pc:[0.16,0.3],pi:0,wind:20},leo:{on:false,pace:1},par:[20,15]},
+ {name:'Black Ice',tip:'Ice carries you sideways. Leap early, before you slide off.',type:'summit',goalM:70,
+  t:{gapMin:68,gapAdd:36,w:114,wMin:80,jit:140,hz0:8,pc:0.06,pi:[0.2,0.36],wind:30},leo:{on:false,pace:1},par:[19,14]},
+ {name:'The Hunter',tip:'A snow leopard follows you up the cliff. Keep moving and do not let it close in.',type:'summit',goalM:80,
+  t:{gapMin:68,gapAdd:38,w:112,wMin:78,jit:150,hz0:10,pc:0.1,pi:0.12,wind:40},leo:{on:true,pace:0.62,n:3},par:[24,17]},
+ {name:'First Pounce',tip:'When it crouches and glows red, leave the ledge before it lands. It will stumble and fall behind.',type:'summit',goalM:90,
+  t:{gapMin:68,gapAdd:40,w:108,wMin:76,jit:150,hz0:10,pc:0.12,pi:0.12,wind:50},leo:{on:true,pace:1.1,n:3},par:[21,16]},
+ {name:'Edelweiss',tip:'Gather all 5 flowers on the way up. The last one grows on the summit.',type:'flowers',n:5,goalM:110,
+  t:{gapMin:68,gapAdd:40,w:106,wMin:74,jit:160,hz0:12,pc:0.12,pi:0.14,wind:50},leo:{on:true,pace:1.0,n:2},par:[25,18]},
+ {name:'Storm Front',tip:'Strong gusts push you off line. Allow for the wind when you aim.',type:'summit',goalM:120,
+  t:{gapMin:70,gapAdd:40,w:104,wMin:72,jit:160,hz0:10,pc:0.15,pi:0.15,wind:90},leo:{on:true,pace:1.25,n:2},par:[29,21]},
+ {name:'Counter-Strike',tip:'Make the leopard miss 3 times. Wait for it to crouch and glow, then leap away.',type:'dodge',n:3,goalM:0,
+  t:{gapMin:70,gapAdd:40,w:108,wMin:76,jit:150,hz0:10,pc:0.1,pi:0.1,wind:60},leo:{on:true,pace:1.7,n:2},par:[40,28]},
+ {name:'Storm Ridge',tip:'Strong gusts and slippery ledges all the way up.',type:'summit',goalM:160,
+  t:{gapMin:70,gapAdd:42,w:100,wMin:70,jit:165,hz0:8,pc:[0.14,0.24],pi:[0.16,0.26],wind:130},leo:{on:true,pace:1.45,n:2},par:[48,36]},
+ {name:'Snow Leopard',tip:'The summit is two hundred metres up. It will not stop hunting you.',type:'summit',goalM:200,
+  t:{gapMin:74,gapAdd:46,w:90,wMin:60,jit:175,hz0:6,pc:[0.12,0.22],pi:[0.14,0.24],wind:130},leo:{on:true,pace:2.5,n:2},par:[50,36]}
+];
+var lv=null, LV=null, lr=Math.random, flowers=[], got=0, dodges=0, lvT=0, sumY=0, summitL=null, leopOn=true, leoPace=1;
+var prog={s:[]}, unlockAll=false, winStars=0;
+try{ var pj=JSON.parse(localStorage.getItem('ibexLv')||'null'); if(pj&&pj.s) prog=pj; }catch(e){}
+try{ if(location.hash==='#unlock') unlockAll=true; }catch(e){}
+function saveProg(){ try{ localStorage.setItem('ibexLv',JSON.stringify(prog)); }catch(e){} }
+function mrng(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function tv(x,p){ return (typeof x==='number')?x:x[0]+(x[1]-x[0])*p; }
+function lvOpen(i){ return unlockAll||i===0||(prog.s[i-1]||0)>0; }
+function starTxt(n){ return '★★★'.slice(0,n)+'☆☆☆'.slice(0,3-n); }
+function objText(L){
+  if(L.type==='flowers') return 'Gather '+L.n+' flowers';
+  if(L.type==='dodge') return 'Make the leopard miss '+L.n+' times';
+  return 'Reach '+L.goalM+' m'+(L.time?' in '+L.time+' s':'');
+}
+function hudObj(){
+  if(!LV) return 'BEST '+Math.max(bestSaved,Math.floor(g.m));
+  if(LV.type==='flowers') return 'FLOWERS '+got+' / '+LV.n;
+  if(LV.type==='dodge') return 'MISSES '+dodges+' / '+LV.n;
+  return 'GOAL '+LV.goalM+' M';
+}
+function fmtT(t){ t=Math.max(0,t); var m=Math.floor(t/60), s=Math.floor(t%60); return m+':'+(s<10?'0':'')+s; }
+
+/* ---------- world ---------- */
+function addLedgeLv(){
+  var T=LV.t, m=-genY/8, p=clamp(m/(LV.goalM||200),0,1), gap=T.gapMin+lr()*tv(T.gapAdd,p), ny=genY-gap, w, cx, type=0, r, pc, pi;
+  if(LV.goalM&&ny<=-LV.goalM*8){ /* summit: a wide ledge exactly at the goal height */
+    sumY=-LV.goalM*8;
+    if(genY-sumY<44&&ledges.length>1&&ledges[ledges.length-1].y<0){ ledges.pop(); genY=ledges[ledges.length-1].y; lastX=ledges[ledges.length-1].x+ledges[ledges.length-1].w/2; }
+    cx=clamp(lastX,120,W-120);
+    summitL={x:cx-110,y:sumY,w:220,type:0,tm:-1,dir:1,alive:true,seed:lr()*100,summit:true};
+    ledges.push(summitL); genY=-1e9; return;
+  }
+  genY=ny;
+  w=Math.max(T.wMin,tv(T.w,p))*(0.8+lr()*0.4);
+  cx=clamp(lastX+(lr()*2-1)*T.jit,w/2+10,W-w/2-10);
+  lastX=cx;
+  r=lr(); pc=tv(T.pc,p); pi=tv(T.pi,p);
+  if(m>T.hz0){ if(r<pc) type=1; else if(r<pc+pi) type=2; }
+  ledges.push({x:cx-w/2,y:genY,w:w,type:type,tm:-1,dir:lr()<0.5?-1:1,alive:true,seed:lr()*100});
+}
+function addLedge(){
+  if(LV) return addLedgeLv();
+  var m=-genY/8;
+  genY-=70+Math.random()*(45+Math.min(m*0.2,20));
+  var w=Math.max(56,120-m*0.25)*(0.8+Math.random()*0.4);
+  var cx=clamp(lastX+(Math.random()*2-1)*170,w/2+10,W-w/2-10);
+  lastX=cx;
+  var type=0, r=Math.random(), pc=Math.min(0.28,m*0.004), pi=Math.min(0.22,m*0.003);
+  if(m>15){ if(r<pc) type=1; else if(r<pc+pi) type=2; }
+  ledges.push({x:cx-w/2,y:genY,w:w,type:type,tm:-1,dir:Math.random()<0.5?-1:1,alive:true,seed:Math.random()*100});
+}
+function reset(){
+  LV=(lv===null)?null:LEVELS[lv]; lr=LV?mrng(1000+lv*7919):Math.random; summitL=null; sumY=0; flowers=[]; got=0; dodges=0; lvT=0;
+  leopOn=!LV||LV.leo.on; leoPace=LV?LV.leo.pace:1;
+  /* ledges below the start screen so the leopard climbs into view; the start ledge is full width, so the ibex can never reach them */
+  ledges=[]; var bj, bw, base=null, low=null, bn=(LV&&LV.leo.n)?LV.leo.n:LEO.BASE_N;
+  for(bj=bn-1;bj>=0;bj--){
+    bw=rnd(110,150);
+    base={x:rnd(24,W-24-bw),y:LEO.BASE_Y0+bj*LEO.BASE_STEP,w:bw,type:0,tm:-1,dir:1,alive:true,seed:Math.random()*100};
+    ledges.push(base); if(!low) low=base;
+  }
+  var start={x:0,y:0,w:W,type:0,tm:-1,dir:1,alive:true,seed:1};
+  ledges.push(start);
+  genY=0; lastX=W/2;
+  while(genY>-1400) addLedge();
+  if(LV&&LV.type==='flowers') placeFlowers();
+  g={x:W/2,y:0,vx:0,vy:0,ground:start,prevY:0,face:1,lastLedgeY:0,m:0,crouch:0};
+  camY=-H*0.78; debris=[]; shake=0; idle=0; aim=null; growlT=0; stepT=0;
+  leop={x:low.x+low.w*0.5,y:low.y,py:low.y,vx:0,vy:0,st:'idle',t:LEO.START_T,rec:0.5,cd:0.6,ledge:low,tl:null,tx:0,face:1,pounce:false,minD:1e9,sl:0,sq:0,pvx:0,pvy:0,skip:null};
+  wind=0; windTarget=0; windT=2; tAll=0;
+  if(!leopOn){ leop.st='off'; leop.y=1e6; leop.py=1e6; }
+}
+/* flowers hang above evenly spaced plain ledges; the last grows on the summit */
+function placeFlowers(){
+  var k, ty, best, bd, d, i, L;
+  for(k=1;k<=LV.n;k++){
+    best=null; bd=1e9; ty=-LV.goalM*8*k/LV.n;
+    if(k===LV.n) best=summitL;
+    else for(i=0;i<ledges.length;i++){
+      L=ledges[i]; if(L.y>-60||L.summit||L.used||L.type!==0) continue;
+      d=Math.abs(L.y-ty); if(d<bd){ bd=d; best=L; }
+    }
+    if(!best) continue;
+    best.used=true; flowers.push({x:best.x+best.w/2,y:best.y-26,got:false,L:best});
+  }
+}
+function die(reason){
+  if(st!=='play') return;
+  st='dead'; deadWhy=reason;
+  var m=Math.floor(g.m), s1=document.getElementById('dS1'), s2=document.getElementById('dS2');
+  document.getElementById('why').textContent=reason;
+  if(!LV){
+    if(m>bestSaved){ bestSaved=m; try{ localStorage.setItem('ibexBest',String(m)); }catch(e){} }
+    document.getElementById('dK').textContent='Endless climb';
+    s1.innerHTML='Altitude <b>'+m+'</b> m'; s2.innerHTML='Best <b>'+bestSaved+'</b> m';
+  }else{
+    document.getElementById('dK').textContent='Level '+(lv+1)+' / '+LV.name;
+    s1.innerHTML=LV.goalM?('Altitude <b>'+m+'</b> of '+LV.goalM+' m'):('Altitude <b>'+m+'</b> m');
+    s2.innerHTML=LV.type==='flowers'?('Flowers <b>'+got+'</b> of '+LV.n):LV.type==='dodge'?('Misses <b>'+dodges+'</b> of '+LV.n):('Time <b>'+fmtT(lvT)+'</b>');
+  }
+  deadP.hidden=false;
+  buzz([30,40,70]);
+  sDeath(reason);
+}
+function pickFlower(fl){
+  fl.got=true; got++; sPick(); buzz(14);
+  for(var q=0;q<8;q++) debris.push({x:fl.x,y:fl.y,vx:rnd(-70,70),vy:rnd(-90,-10),life:0.6,c:'#f2a65a',s:2});
+  if(got>=LV.n) win();
+}
+function win(){
+  if(st!=='play'||!LV) return;
+  st='win';
+  var t=lvT, n=1; if(t<=LV.par[0]) n=2; if(t<=LV.par[1]) n=3;
+  winStars=n;
+  if(n>(prog.s[lv]||0)) prog.s[lv]=n;
+  saveProg();
+  document.getElementById('wK').textContent='Level '+(lv+1)+' cleared / '+LV.name;
+  document.getElementById('wH').textContent=LV.type==='flowers'?'Gathered':LV.type==='dodge'?'Outplayed':'Summit';
+  document.getElementById('wS').textContent=starTxt(n);
+  document.getElementById('wT').textContent=t.toFixed(1);
+  document.getElementById('wP').textContent=n>=3?'Perfect run.':(n===2?'Three stars: under '+LV.par[1]+' s.':'Two stars: under '+LV.par[0]+' s.');
+  document.getElementById('wNext').hidden=(lv>=LEVELS.length-1);
+  winP.hidden=false;
+  sWin(); buzz([40,40,40,40,120]);
+}
+/* a crumbling ledge loses only the chunk under whoever stood on it; the rest stays (still cracked) so the climb can be retried */
+function breakLedge(L,bx){
+  var half=clamp(L.w*0.35,22,52)/2, a=bx-half, b=bx+half, R=L.x+L.w, parts=[], i=ledges.indexOf(L), k, pw, N;
+  L.alive=false;
+  if(a-L.x>=12) parts.push([L.x,a]);
+  if(R-b>=12) parts.push([b,R]);
+  if(!parts.length) parts.push(a-L.x>=R-b?[L.x,Math.max(a,L.x+12)]:[Math.min(b,R-12),R]); /* never lose the whole ledge */
+  for(k=0;k<parts.length;k++){
+    pw=parts[k][1]-parts[k][0];
+    N={x:parts[k][0],y:L.y,w:pw,type:1,tm:-1,dir:L.dir,alive:true,seed:L.seed+k*7.3};
+    if(i>=0) ledges.splice(i+1+k,0,N); else ledges.push(N);
+  }
+}
+function land(L){
+  g.y=L.y; g.vy=0; g.vx=0; g.ground=L; g.lastLedgeY=L.y; idle=0;
+  if(L.type===1&&L.tm<0) L.tm=1.0;
+  g.m=Math.max(g.m,-L.y/8);
+  for(var i=0;i<6;i++) debris.push({x:g.x,y:g.y,vx:rnd(-50,50),vy:rnd(-90,-20),life:0.5,c:L.type===2?'#8fd3e8':'#eef3f7',s:2});
+  sLand(L.type);
+  buzz(L.type===1?25:12);
+  if(LV&&flowers.length){ for(var fi=0;fi<flowers.length;fi++){ if(!flowers[fi].got&&flowers[fi].L===L) pickFlower(flowers[fi]); } }
+  if(LV&&L.summit&&LV.type==='summit') win();
+}
+function fire(){
+  if(!aim||!g.ground) return;
+  var dx=(aim.sx-aim.cx)/S, dy=(aim.sy-aim.cy)/S, len=Math.hypot(dx,dy);
+  if(len<10) return;
+  var l=Math.min(len,PULL), v=l/PULL*MAXV;
+  g.vx=dx/len*v; g.vy=dy/len*v; g.ground=null; g.prevY=g.y;
+  if(Math.abs(g.vx)>8) g.face=g.vx>0?1:-1;
+  sLeap();
+}
+
+/* ---------- snow leopard: leaps ledge to ledge, lethal only on body contact ----------
+   States: idle (landed, thinking) -> crouch (telegraph) -> leap (ballistic arc) -> idle | stumble (missed pounce) -> fall -> idle.
+   All tuning numbers live in LEO. Times in seconds, distances in world px (8 px = 1 m), speeds in px/s. */
+var LEO={
+  GRAV:1800,                       /* leopard gravity */
+  CROUCH_POUNCE:0.6,               /* pounce warning, crouch start to launch */
+  CROUCH_HOP:0.28, HOP_ICE_EXTRA:0.15, /* ordinary climbing hop; ice makes it scrabble longer */
+  HOP_MARGIN:46, POUNCE_MARGIN:26, /* apex height above the higher end of the arc: hop is lofted, pounce is flatter and faster */
+  RISE_MAX:190, RISE_MAX2:260, DROP_MAX:200, /* longest climb per leap, fallback climb if nothing else is reachable, longest drop to chase a fallen ibex */
+  POUNCE_RISE:125, POUNCE_DROP:90, /* the ibex's ledge must be within this to start a telegraphed pounce from where it stands */
+  VX_HOP:300, VX_POUNCE:340,       /* horizontal speed caps */
+  REACT_T:0.22,                    /* pause after landing before it may start a pounce */
+  FIXED:1.04,                      /* hop crouch + typical flight + landing, used by the pacing formula */
+  SPEED0:24, SLOPE:0.42,           /* pacing: target climb px/s = SPEED0 + SLOPE * ibex altitude in m */
+  THINK_MIN:0.15, THINK_MAX:9,   /* wait between hops, clamped */
+  IDLE_FAST:0.6,                   /* wait multiplier while the ibex has been still for over 2 s */
+  CATCHUP_GAP:560, CATCHUP_MULT:1.8, /* further behind than this (px, about 70 m), its pace is multiplied */
+  START_T:2.4,                     /* first wait at game start */
+  STUMBLE_T:0.9, STUMBLE_V:170, STUMBLE_FRIC:1.3, /* missed pounce: slides toward the nearest ledge edge */
+  ICE_DRIFT:34, ICE_CARRY:0.5, ICE_FRIC:1.1,      /* ice: constant drift, share of landing speed carried, slide decay */
+  CRUMBLE_T:0.55,                  /* leopard weight on a crumbling ledge: seconds until it gives way */
+  HW:42, BH:32, IHW:12, IH:24,     /* contact boxes: leopard half width and height, ibex half width and height */
+  NEAR:22,                         /* near miss: closest approach during a leap under this many px */
+  WARN_BUZZ:[25,45,30,40,40,35,55,30,70,30,90], LAUNCH_BUZZ:70, WARN_SHAKE:0.8, /* escalating vibration across the 0.6 s warning, stronger launch buzz, camera tremor at full warning */
+  HEAR:420, FLOOR:700,             /* hop sounds only within this distance; safety floor below the ibex */
+  BASE_N:4, BASE_Y0:180, BASE_STEP:90 /* hidden ledges below the start so the leopard climbs into view */
+};
+var leoCatch={x:0,y:0,w:W,type:0,tm:-1,dir:1,alive:true,seed:0};
+var sepX=0, sepY=0, TELEGRAPH_MARK=true;
+
+function leoSep(){
+  sepX=Math.abs(leop.x+leop.face*6-g.x)-(LEO.HW+LEO.IHW);
+  sepY=Math.abs((leop.y-LEO.BH*0.5)-(g.y-LEO.IH*0.5))-(LEO.BH+LEO.IH)*0.5;
+  return Math.hypot(Math.max(sepX,0),Math.max(sepY,0));
+}
+/* wait before the next hop, paced so the average climb speed is SPEED0 + SLOPE * ibex altitude whatever the hop size */
+function leoThink(){
+  var s=(LEO.SPEED0+LEO.SLOPE*g.m)*leoPace, t;
+  if(leop.y-g.lastLedgeY>LEO.CATCHUP_GAP) s*=LEO.CATCHUP_MULT;
+  if(leoPickHop(LEO.RISE_MAX)) t=clamp(Math.max(Math.abs(leop.y-leop.tl.y),40)/s-LEO.FIXED,LEO.THINK_MIN,LEO.THINK_MAX);
+  else t=0.3;
+  if(idle>2) t*=LEO.IDLE_FAST;
+  return t;
+}
+/* flight time for a rise h (px, positive = up) with the given arc margin; leaves the launch vy in leop.pvy */
+function leoFlight(h,margin){
+  var A=Math.max(h,0)+margin, tu=Math.sqrt(2*A/LEO.GRAV), td=Math.sqrt(2*(A-h)/LEO.GRAV);
+  leop.pvy=-LEO.GRAV*tu;
+  return tu+td;
+}
+function leoPickPounce(){
+  var Lt=g.ground, o=leop;
+  if(!Lt||!Lt.alive) return false;
+  var h=(Lt===o.ledge)?0:o.y-Lt.y;
+  if(h>LEO.POUNCE_RISE||h<-LEO.POUNCE_DROP) return false;
+  var reach=LEO.VX_POUNCE*leoFlight(h,LEO.POUNCE_MARGIN);
+  var a=Lt.x+10, b=Lt.x+Lt.w-10; if(a>b){ a=b=Lt.x+Lt.w*0.5; }
+  a=Math.max(a,o.x-reach); b=Math.min(b,o.x+reach);
+  if(a>b) return false;
+  o.tl=Lt; o.tx=clamp(g.x,a,b);
+  return true;
+}
+function leoPickHop(riseMax){
+  var o=leop, best=null, bs=1e9, btx=0, i, L, h, reach, a, b, tx, sc, ref=g.ground?g.y:g.lastLedgeY, down=ref>o.y+40;
+  for(i=0;i<ledges.length;i++){
+    L=ledges[i];
+    if(!L.alive||L===o.ledge||L.y<ref-20) continue; /* never hops above the ledge the ibex is on or last stood on */
+    h=o.y-L.y;
+    if(h>=12){ if(h>riseMax) continue; }
+    else if(!down||h>-12||h<-LEO.DROP_MAX) continue;
+    reach=LEO.VX_HOP*leoFlight(h,LEO.HOP_MARGIN);
+    a=L.x+10; b=L.x+L.w-10; if(a>b){ a=b=L.x+L.w*0.5; }
+    a=Math.max(a,o.x-reach); b=Math.min(b,o.x+reach);
+    if(a>b) continue;
+    tx=clamp(g.x,a,b);
+    sc=Math.abs(L.y-ref)+0.35*Math.abs(tx-g.x);
+    if(sc<bs){ bs=sc; best=L; btx=tx; }
+  }
+  if(!best) return false;
+  o.tl=best; o.tx=btx;
+  return true;
+}
+function leoCrouch(){
+  var o=leop, ice=o.ledge&&o.ledge.type===2;
+  o.st='crouch';
+  o.cd=o.pounce?LEO.CROUCH_POUNCE:LEO.CROUCH_HOP+(ice?LEO.HOP_ICE_EXTRA:0);
+  o.t=o.cd; o.face=o.tx>=o.x?1:-1;
+  if(o.pounce){ sWarn(o.cd); buzz(LEO.WARN_BUZZ); }
+}
+function leoLaunch(){
+  var o=leop, L=o.tl;
+  if(!L||!L.alive){ o.st='idle'; o.pounce=false; o.rec=0; o.t=0.3; return; }
+  var h=o.y-L.y, T=leoFlight(h,o.pounce?LEO.POUNCE_MARGIN:LEO.HOP_MARGIN), cap=o.pounce?LEO.VX_POUNCE:LEO.VX_HOP;
+  o.vx=clamp((o.tx-o.x)/T,-cap,cap); o.vy=o.pvy;
+  o.py=o.y; o.ledge=null; o.sl=0; o.st='leap'; o.minD=1e9;
+  if(Math.abs(o.vx)>8) o.face=o.vx>0?1:-1;
+  if(o.pounce){ sPounce(); buzz(LEO.LAUNCH_BUZZ); }
+  else if(o.y-g.y<LEO.HEAR) sThud(0.07,95);
+}
+function leoFall(vx){
+  var o=leop;
+  o.st='fall'; o.skip=o.ledge; o.ledge=null; o.vx=vx; o.vy=0; o.py=o.y; o.pounce=false; o.sl=0;
+  if(o.y-g.y<LEO.HEAR) sScrabble(0.7);
+}
+function leoLand(L){
+  var o=leop, vx=o.vx, wasP=o.pounce, wasLeap=(o.st==='leap'), i, vis=(o.y>camY-40&&o.y<camY+H+40);
+  o.y=L.y; o.vy=0; o.vx=0; o.ledge=L; o.sq=0.14; o.sl=0; o.pounce=false;
+  if(L.type===2) o.sl=vx*LEO.ICE_CARRY;
+  if(L.type===1&&L.tm<0) L.tm=LEO.CRUMBLE_T;
+  if(vis){ for(i=0;i<4;i++) debris.push({x:o.x,y:o.y,vx:rnd(-40,40),vy:rnd(-70,-20),life:0.4,c:L.type===2?'#8fd3e8':'#eef3f7',s:2}); }
+  if(o.y-g.y<LEO.HEAR) sThud(0.11,70);
+  if(wasLeap&&o.minD<LEO.NEAR){ buzz(18); sWhoosh(); } /* near-miss pulse */
+  if(wasP&&wasLeap){
+    /* the ibex was gone: leopard overshoots, stumbles toward the nearest ledge edge and usually tumbles off */
+    o.st='stumble'; o.t=LEO.STUMBLE_T;
+    o.vx=(o.x<L.x+L.w*0.5?-1:1)*LEO.STUMBLE_V;
+    sStumble();
+    dodges++; if(LV&&LV.type==='dodge'&&dodges>=LV.n) win();
+  }else{
+    o.st='idle'; o.rec=LEO.REACT_T; o.t=leoThink();
+  }
+}
+/* standing on a ledge: ice slides, crumbling gives way. Returns true if the leopard left the ledge this frame. */
+function leoGround(dt){
+  var o=leop, L=o.ledge, k;
+  if(!L||!L.alive){ leoFall(0); return true; }
+  if(L.type===2){
+    var dv=o.sl+L.dir*LEO.ICE_DRIFT;
+    o.x+=dv*dt; o.sl*=Math.max(0,1-LEO.ICE_FRIC*dt);
+    if(o.x<L.x-2||o.x>L.x+L.w+2){ leoFall(dv); return true; }
+  }
+  if(L.type===1&&L.tm>=0&&g.ground!==L){
+    L.tm-=dt;
+    if(L.tm<=0){
+      breakLedge(L,o.x);
+      for(k=0;k<12;k++) debris.push({x:rnd(L.x,L.x+L.w),y:L.y,vx:rnd(-40,40),vy:rnd(-40,60),life:1,c:'#5a6877',s:3});
+      if(o.y-g.y<LEO.HEAR) sCrumble(0.1);
+      leoFall(0); return true;
+    }
+  }
+  return false;
+}
+function updLeo(dt){
+  var o=leop, L, i, landed=null, a, b;
+  if(!leopOn) return;
+  o.sq=Math.max(0,o.sq-dt);
+  if(o.st==='leap'||o.st==='fall'){
+    o.py=o.y; o.vy+=LEO.GRAV*dt; o.x+=o.vx*dt; o.y+=o.vy*dt;
+    if(o.x<8) o.x=8; else if(o.x>W-8) o.x=W-8;
+    if(o.vy>0){
+      for(i=0;i<ledges.length;i++){
+        L=ledges[i];
+        if(!L.alive) continue;
+        if(L===o.skip){ if(o.y<L.y+14) continue; o.skip=null; } /* a ledge it just fell off is ignored until it has cleared it */
+        if(o.py<=L.y+3&&o.y>=L.y&&o.x>=L.x-4&&o.x<=L.x+L.w+4){ landed=L; break; }
+      }
+      if(!landed&&o.y>g.y+LEO.FLOOR){ leoCatch.y=o.y; landed=leoCatch; }
+    }
+  }else if(!leoGround(dt)){
+    if(o.st==='crouch'){
+      if(o.pounce&&g.ground===o.tl&&o.tl.alive){ /* aim follows the ibex while it stays; once it leaves, the spot is frozen */
+        a=o.tl.x+10; b=o.tl.x+o.tl.w-10; if(a>b){ a=b=o.tl.x+o.tl.w*0.5; }
+        o.tx=clamp(g.x,a,b);
+      }
+      o.face=o.tx>=o.x?1:-1;
+      if(o.pounce&&LEO.WARN_SHAKE>0) shake=Math.max(shake,LEO.WARN_SHAKE*clamp(1-o.t/o.cd,0,1)); /* tremor builds with the warning */
+      o.t-=dt; if(o.t<=0) leoLaunch();
+    }else if(o.st==='idle'){
+      o.rec-=dt; o.t-=dt;
+      if(o.rec<=0){
+        if(g.ground&&leoPickPounce()){ o.pounce=true; leoCrouch(); }
+        else if(o.t<=0){
+          if(leoPickHop(LEO.RISE_MAX)||leoPickHop(LEO.RISE_MAX2)){
+            L=o.tl;
+            o.pounce=(L===g.ground)||(Math.abs(L.y-g.y)<40&&Math.abs(o.tx-g.x)<90);
+            leoCrouch();
+          }else o.t=0.3;
+        }
+      }
+    }else{ /* stumble */
+      L=o.ledge; o.t-=dt; o.x+=o.vx*dt; o.vx*=Math.max(0,1-LEO.STUMBLE_FRIC*dt);
+      if(o.x<L.x-2||o.x>L.x+L.w+2) leoFall(o.vx);
+      else if(o.t<=0){ o.st='idle'; o.rec=0.2; o.t=0.3; }
+    }
+  }
+  /* contact: body overlap is the only way the leopard kills; a stumbling leopard is harmless */
+  var d=leoSep();
+  if(o.st!=='stumble'&&sepX<0&&sepY<0){ die('Caught'); return; }
+  if(o.st==='leap'&&d<o.minD) o.minD=d;
+  if(landed) leoLand(landed);
+}
+
+/* ---------- input ---------- */
+function pos(e){var r=cv.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top};}
+cv.addEventListener('pointerdown',function(e){
+  e.preventDefault(); initAudio();
+  if(st!=='play'||!g.ground) return;
+  var p=pos(e); aim={sx:p.x,sy:p.y,cx:p.x,cy:p.y};
+  try{ cv.setPointerCapture(e.pointerId); }catch(er){}
+});
+cv.addEventListener('pointermove',function(e){ if(!aim) return; var p=pos(e); aim.cx=p.x; aim.cy=p.y; });
+function endAim(){ if(aim){ fire(); aim=null; } }
+cv.addEventListener('pointerup',endAim);
+cv.addEventListener('pointercancel',function(){aim=null;});
+var levelsP=document.getElementById('levels'), introP=document.getElementById('intro'), winP=document.getElementById('win');
+function showOnly(p){ var a=[titleP,levelsP,introP,deadP,winP], i; for(i=0;i<a.length;i++) a[i].hidden=(a[i]!==p); }
+function toMenu(p){ st='title'; if(g) g.m=0; showOnly(p); }
+function buildLevels(){
+  var gr=document.getElementById('lgrid'), i, b, ok;
+  gr.innerHTML='';
+  for(i=0;i<LEVELS.length;i++){
+    (function(i){
+      ok=lvOpen(i); b=document.createElement('button'); b.type='button'; b.className='lb'; b.disabled=!ok;
+      b.innerHTML=(i+1)+'<small>'+(ok?starTxt(prog.s[i]||0):'LOCKED')+'</small>';
+      b.addEventListener('click',function(){ openIntro(i); });
+      gr.appendChild(b);
+    })(i);
+  }
+}
+function openLevels(){ buildLevels(); toMenu(levelsP); }
+function openIntro(i){
+  lv=i; var L=LEVELS[i];
+  document.getElementById('iK').textContent='Level '+(i+1)+' of '+LEVELS.length;
+  document.getElementById('iN').textContent=L.name;
+  document.getElementById('iO').textContent=objText(L);
+  document.getElementById('iT').textContent=L.tip;
+  toMenu(introP);
+}
+function startRun(){ initAudio(); showOnly(null); reset(); st='play'; }
+document.getElementById('go').addEventListener('click',function(){ initAudio(); openLevels(); });
+document.getElementById('endless').addEventListener('click',function(){ lv=null; startRun(); });
+document.getElementById('unl').addEventListener('click',function(){ unlockAll=true; buildLevels(); });
+document.getElementById('iGo').addEventListener('click',startRun);
+document.getElementById('iBack').addEventListener('click',openLevels);
+document.getElementById('again').addEventListener('click',startRun);
+document.getElementById('dLv').addEventListener('click',openLevels);
+document.getElementById('wNext').addEventListener('click',function(){ if(lv<LEVELS.length-1) openIntro(lv+1); else openLevels(); });
+document.getElementById('wAgain').addEventListener('click',startRun);
+document.getElementById('wLv').addEventListener('click',openLevels);
+
+/* ---------- update ---------- */
+function update(dt){
+  tAll+=dt;
+  var m=g.m;
+  if(st==='play'){
+    windT-=dt;
+    if(windT<=0){ windT=rnd(2,5); windTarget=(Math.random()*2-1)*(LV?LV.t.wind:Math.min(160,30+m*2)); }
+    wind+=(windTarget-wind)*Math.min(1,dt*0.8);
+    if(LV){ lvT+=dt; if(LV.time&&lvT>=LV.time){ die('Out of time'); return; } }
+
+    if(!g.ground){
+      g.prevY=g.y;
+      g.vy+=GR*dt; g.vx+=wind*dt;
+      g.x+=g.vx*dt; g.y+=g.vy*dt;
+      if(g.x<8){g.x=8;g.vx=Math.abs(g.vx)*0.3;}
+      if(g.x>W-8){g.x=W-8;g.vx=-Math.abs(g.vx)*0.3;}
+      if(g.vy>0){
+        for(var i=0;i<ledges.length;i++){
+          var L=ledges[i];
+          if(!L.alive) continue;
+          if(g.prevY<=L.y+3&&g.y>=L.y&&g.x>=L.x-4&&g.x<=L.x+L.w+4){ land(L); break; }
+        }
+      }
+      if(g.y>g.lastLedgeY+700) die('Fell');
+    }else{
+      idle+=dt;
+      var Lg=g.ground;
+      if(Lg.type===2){
+        g.x+=Lg.dir*(16+idle*16)*dt;
+        if(g.x<Lg.x-2||g.x>Lg.x+Lg.w+2){ g.ground=null; g.vx=Lg.dir*30; g.vy=0; g.prevY=g.y; }
+      }
+      if(Lg.type===1){
+        Lg.tm-=dt;
+        shake=Math.max(shake,0.6);
+        if(Lg.tm<=0){
+          breakLedge(Lg,g.x); g.ground=null; g.vy=0; g.vx=0; g.prevY=g.y;
+          for(var k=0;k<14;k++) debris.push({x:rnd(Lg.x,Lg.x+Lg.w),y:Lg.y,vx:rnd(-40,40),vy:rnd(-40,60),life:1,c:'#5a6877',s:3});
+          buzz([40,30,40]); sCrumble(0.16);
+        }
+      }
+    }
+
+    if(LV&&flowers.length){ /* flowers are picked up on touch, in the air or on a ledge */
+      for(var fi=0;fi<flowers.length;fi++){ var fl=flowers[fi];
+        if(!fl.got&&Math.abs(g.x-fl.x)<30&&Math.abs((g.y-12)-fl.y)<30){ pickFlower(fl); if(st!=='play') break; }
+      }
+    }
+    // snow leopard: leaps up the same ledges; kills only on body contact
+    updLeo(dt);
+
+    // camera
+    var target=g.y-H*0.62;
+    camY+=(target-camY)*Math.min(1,dt*4);
+    camY=Math.min(camY,-H*0.78);
+    while(genY>camY-900) addLedge();
+    while(ledges.length>1&&ledges[0].y>camY+H+1000) ledges.shift();
+
+    if(windG&&!muted){
+      windG.gain.value=0.03+Math.abs(wind)/160*0.08+Math.min(0.05,g.m/300*0.05);
+      windF.frequency.value=300+Math.abs(wind)*3+g.m*2;
+    }
+  }
+  shake=Math.max(0,shake-dt*2);
+  for(var j=debris.length-1;j>=0;j--){
+    var d=debris[j]; d.life-=dt; d.vy+=900*dt; d.x+=d.vx*dt; d.y+=d.vy*dt;
+    if(d.life<=0) debris.splice(j,1);
+  }
+}
+
+/* ---------- drawing ---------- */
+/* Art layer: faceted alpine dusk. Visual code only; no game state is changed here. */
+var INK='#0d131b';
+function rgbOf(h){return [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];}
+function key(m,top,bot,far,mid,w1,w2,amber,ice,stars,sun){
+  return {m:m,top:rgbOf(top),bot:rgbOf(bot),far:rgbOf(far),mid:rgbOf(mid),w1:rgbOf(w1),w2:rgbOf(w2),amber:amber,ice:ice,stars:stars,sun:sun};
+}
+var KEYS=[
+  key(0,  '#3b5876','#d9a874','#7f8796','#46556b','#2a3441','#323f4d',0.55,0.35,0,1),
+  key(35, '#34466a','#c9806c','#7a7a92','#413f5c','#2a3441','#323f4d',0.45,0.40,0,0.7),
+  key(70, '#262f55','#7c6190','#5f5d85','#35385e','#2a3441','#323f4d',0.30,0.45,0.25,0),
+  key(105,'#131c34','#2f4a70','#3d5a86','#1f3050','#222c39','#2a3542',0.15,0.50,0.6,0),
+  key(140,'#090d14','#2a4260','#2f4a6e','#17263a','#1c2733','#232f3d',0,0.55,1,0)
+];
+var pal={top:'',bot:'',far:'',mid:'',w1:'',w2:'',amber:0,ice:0,stars:0,sun:0};
+function lc(a,b,t){return 'rgb('+Math.round(a[0]+(b[0]-a[0])*t)+','+Math.round(a[1]+(b[1]-a[1])*t)+','+Math.round(a[2]+(b[2]-a[2])*t)+')';}
+function palette(m){
+  var i=0; while(i<KEYS.length-2&&m>=KEYS[i+1].m) i++;
+  var a=KEYS[i], b=KEYS[i+1], t=clamp((m-a.m)/(b.m-a.m),0,1);
+  pal.top=lc(a.top,b.top,t); pal.bot=lc(a.bot,b.bot,t); pal.far=lc(a.far,b.far,t); pal.mid=lc(a.mid,b.mid,t);
+  pal.w1=lc(a.w1,b.w1,t); pal.w2=lc(a.w2,b.w2,t);
+  pal.amber=a.amber+(b.amber-a.amber)*t; pal.ice=a.ice+(b.ice-a.ice)*t;
+  pal.stars=a.stars+(b.stars-a.stars)*t; pal.sun=a.sun+(b.sun-a.sun)*t;
+}
+
+/* sky, sun and stars are rendered once per metre of altitude into an offscreen canvas */
+var skyC=document.createElement('canvas'), skyX=skyC.getContext('2d'), skyKey='';
+function buildSky(){
+  var k=Math.floor(g.m)+'|'+cv.width+'x'+cv.height;
+  if(k===skyKey) return;
+  skyKey=k;
+  if(skyC.width!==cv.width||skyC.height!==cv.height){ skyC.width=cv.width; skyC.height=cv.height; }
+  var c=skyX;
+  c.setTransform(dpr*S,0,0,dpr*S,0,0);
+  var gr=c.createLinearGradient(0,0,0,H);
+  gr.addColorStop(0,pal.top); gr.addColorStop(1,pal.bot);
+  c.fillStyle=gr; c.fillRect(0,0,W,H);
+  if(pal.sun>0.02){
+    var sx=W*0.28, sy=H*0.7;
+    var rg=c.createRadialGradient(sx,sy,6,sx,sy,90);
+    rg.addColorStop(0,'rgba(242,166,90,'+(0.5*pal.sun)+')'); rg.addColorStop(1,'rgba(242,166,90,0)');
+    c.fillStyle=rg; c.fillRect(sx-90,sy-90,180,180);
+    c.fillStyle='rgba(242,166,90,'+(0.95*pal.sun)+')'; c.beginPath(); c.arc(sx,sy,22,0,Math.PI*2); c.fill();
+  }
+  if(pal.stars>0.02){
+    c.fillStyle='rgba(238,243,247,'+(pal.stars*0.9)+')';
+    for(var i=0;i<40;i++){ c.fillRect(hash(i)*W,hash(i+50)*H*0.7,1.2,1.2); }
+  }
+}
+function drawSky(){
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.drawImage(skyC,0,0);
+  ctx.setTransform(dpr*S,0,0,dpr*S,0,0);
+  // cloud bands, only below the cloud line
+  var fac=1-clamp((g.m-50)/60,0,1);
+  if(fac>0.02){
+    for(var c=0;c<6;c++){
+      var f=0.35+c*0.08, span=H+260;
+      var yy=((hash(c+3)*span-camY*f)%span+span)%span-130;
+      var xx=hash(c+9)*W;
+      ctx.fillStyle='rgba(238,243,247,'+((0.07+0.03*(c%3))*fac)+')';
+      ctx.beginPath(); ctx.ellipse(xx,yy,110+c*14,16+c*2,0,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(xx+90,yy+8,70,12,0,0,Math.PI*2); ctx.fill();
+    }
+  }
+  // far and mid ridges: slow parallax, never scrolled fully out of view
+  for(var layer=0;layer<2;layer++){
+    var raw=(-camY-H*0.78)*(layer?0.22:0.10), off=Math.min(raw,170+layer*12);
+    ctx.fillStyle=layer?pal.mid:pal.far;
+    ctx.beginPath(); ctx.moveTo(0,H+10);
+    for(var x=0;x<=W+20;x+=20){
+      var h=70+layer*40+40*Math.sin(x*0.03+layer*2)+25*Math.sin(x*0.071+layer*4);
+      ctx.lineTo(x,H-h+off);
+    }
+    ctx.lineTo(W+20,H+10); ctx.closePath(); ctx.fill();
+  }
+}
+
+function wallW(y){return 14+10*Math.sin(y*0.02)+8*Math.sin(y*0.057+1);}
+function drawWalls(){
+  var y0=camY-20, y1=camY+H+20, ys=Math.floor(y0/16)*16;
+  for(var side=0;side<2;side++){
+    var edge=side===0?0:W;
+    ctx.fillStyle=side?pal.w2:pal.w1;
+    ctx.beginPath(); ctx.moveTo(edge,y0);
+    for(var y=ys;y<=y1;y+=16){ var w=wallW(y+side*300); ctx.lineTo(side===0?w:W-w,y); }
+    ctx.lineTo(edge,y1); ctx.closePath(); ctx.fill();
+    // lit edge: amber on the sun side (right wall), ice on the shadow side (left wall)
+    var a=side?pal.amber:pal.ice;
+    if(a>0.02){
+      ctx.strokeStyle=(side?'rgba(242,166,90,':'rgba(143,211,232,')+a+')'; ctx.lineWidth=1.6;
+      ctx.beginPath();
+      for(var y2=ys;y2<=y1;y2+=16){ var w2=wallW(y2+side*300); if(y2===ys) ctx.moveTo(side===0?w2:W-w2,y2); else ctx.lineTo(side===0?w2:W-w2,y2); }
+      ctx.stroke();
+    }
+    ctx.strokeStyle='rgba(255,255,255,0.05)'; ctx.lineWidth=1;
+    for(var yy=Math.floor(y0/40)*40;yy<=y1;yy+=40){
+      var ww=wallW(yy+side*300);
+      ctx.beginPath(); ctx.moveTo(side===0?0:W,yy+hash(yy)*10); ctx.lineTo(side===0?ww:W-ww,yy+hash(yy)*10+6); ctx.stroke();
+    }
+  }
+}
+
+function drawLedge(L){
+  var sx=0;
+  if(L.type===1&&L.tm>=0&&L.tm<1) sx=Math.sin(tAll*60)*1.4;
+  var x=L.x+sx, y=L.y, w=L.w, s=L.seed, i;
+  ctx.lineWidth=1.2; ctx.lineJoin='round'; ctx.strokeStyle=INK;
+  if(L.type===0){
+    var d1=8+hash(s)*10, d2=14+hash(s+1)*12, d3=6+hash(s+2)*8;
+    ctx.fillStyle='#2c3743'; ctx.beginPath();
+    ctx.moveTo(x+3,y+8); ctx.lineTo(x+w-3,y+8); ctx.lineTo(x+w*0.78,y+8+d1); ctx.lineTo(x+w*0.6,y+8+d3);
+    ctx.lineTo(x+w*0.42,y+8+d2); ctx.lineTo(x+w*0.22,y+8+d3+2); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#4a5766'; ctx.fillRect(x,y,w,9); ctx.strokeRect(x,y,w,9);
+    ctx.fillStyle='#3b4856'; ctx.fillRect(x+w*0.8,y+0.6,w*0.2-0.6,8);
+    ctx.fillStyle='#eef3f7'; ctx.beginPath();
+    ctx.moveTo(x-2,y+1); ctx.lineTo(x,y-3); ctx.lineTo(x+w*0.28,y-4); ctx.lineTo(x+w*0.52,y-3); ctx.lineTo(x+w*0.76,y-4);
+    ctx.lineTo(x+w,y-3); ctx.lineTo(x+w+2,y+1); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle='#f2a65a'; ctx.lineWidth=1.6; ctx.beginPath(); ctx.moveTo(x+0.8,y+1); ctx.lineTo(x+0.8,y+9); ctx.stroke();
+  }else if(L.type===1){
+    var cw=[0.36,0.26,0.34], cx0=[0,0.40,0.70], cy=[0,1.5,-0.5], dd=[12,9,11];
+    for(i=0;i<3;i++){
+      var ax=x+w*cx0[i], aw=w*cw[i], ay=y+cy[i];
+      ctx.fillStyle='#5a4638'; ctx.beginPath();
+      ctx.moveTo(ax+1,ay+8); ctx.lineTo(ax+aw-1,ay+8); ctx.lineTo(ax+aw*0.6,ay+8+dd[i]); ctx.lineTo(ax+aw*0.3,ay+8+dd[i]*0.5); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle='#8a6f5a'; ctx.beginPath();
+      ctx.moveTo(ax,ay); ctx.lineTo(ax+aw,ay); ctx.lineTo(ax+aw-1.5,ay+9); ctx.lineTo(ax+1,ay+8); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle='#c9a98a'; ctx.fillRect(ax,ay-3,aw,3); ctx.strokeRect(ax,ay-3,aw,3);
+    }
+    ctx.lineWidth=1; ctx.beginPath();
+    ctx.moveTo(x+w*0.16,y); ctx.lineTo(x+w*0.2,y+4); ctx.lineTo(x+w*0.17,y+8);
+    ctx.moveTo(x+w*0.84,y); ctx.lineTo(x+w*0.8,y+4); ctx.lineTo(x+w*0.84,y+8); ctx.stroke();
+  }else{
+    var n=Math.max(2,Math.round(w/26)), ix;
+    ctx.fillStyle='#8fd3e8';
+    for(i=0;i<n;i++){
+      ix=x+w*(0.12+0.76*(i+hash(s+i))/n); var ih=5+hash(s+i+9)*8;
+      ctx.beginPath(); ctx.moveTo(ix-2.5,y+9); ctx.lineTo(ix+2.5,y+9); ctx.lineTo(ix,y+9+ih); ctx.closePath(); ctx.fill(); ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.moveTo(x,y+3); ctx.quadraticCurveTo(x,y-2,x+4,y-2); ctx.lineTo(x+w-4,y-2); ctx.quadraticCurveTo(x+w,y-2,x+w,y+3);
+    ctx.lineTo(x+w,y+7); ctx.quadraticCurveTo(x+w,y+10,x+w-4,y+10); ctx.lineTo(x+4,y+10); ctx.quadraticCurveTo(x,y+10,x,y+7); ctx.closePath();
+    ctx.fillStyle='#8fd3e8'; ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#5a8ea3'; ctx.fillRect(x+1.5,y+6.5,w-3,2.5);
+    ctx.fillStyle='#c9eefa'; ctx.fillRect(x+4,y-1.2,w-8,2.4);
+    ctx.strokeStyle='rgba(255,255,255,0.9)'; ctx.lineWidth=1.3; ctx.beginPath();
+    ctx.moveTo(x+w*0.25,y+7); ctx.lineTo(x+w*0.25+6,y+1); ctx.moveTo(x+w*0.6,y+7); ctx.lineTo(x+w*0.6+6,y+1); ctx.stroke();
+  }
+}
+
+/* ---------- sprites: Path2D built once from the approved board ---------- */
+function mk(list){ var o=[]; for(var i=0;i<list.length;i++){ var e=list[i]; o.push({p:new Path2D(e[0]),f:e[1],s:e[2]!==0}); } return o; }
+function paintList(list){
+  for(var i=0;i<list.length;i++){ var e=list[i]; ctx.fillStyle=e.f; ctx.fill(e.p); if(e.s) ctx.stroke(e.p); }
+}
+var IB_LEGS=mk([
+  ['M46,66 L54,66 L53,84 L52,100 L46,100 L47,84Z','#8c6f4b'],['M74,66 L82,66 L81,84 L80,100 L74,100 L75,84Z','#8c6f4b'],
+  ['M32,62 L44,62 L46,78 L42,92 L42,100 L35,100 L36,90 L34,76Z','#b8996d'],['M84,62 L94,62 L93,84 L92,100 L85,100 L86,84Z','#b8996d']
+]);
+var IB_UP=mk([
+  ['M26,56 L19,50 L24,47 L29,52Z','#a98760'],
+  ['M26,56 L30,46 L46,41 L66,41 L84,44 L92,52 L92,64 L84,72 L62,74 L40,73 L28,66Z','#e6cfa6'],
+  ['M28,64 L40,73 L62,74 L84,72 L92,64 L92,58 L70,62 L46,64Z','#a98760',0],
+  ['M46,70 L62,73 L80,71 L72,68 L54,67Z','#f4e8cf',0],
+  ['M84,44 L94,32 L104,28 L108,40 L100,56 L92,62 L90,52Z','#e6cfa6'],
+  ['M100,28 L112,28 L118,36 L118,42 L110,46 L102,44 L100,36Z','#e6cfa6'],
+  ['M108,46 L110,55 L103,47Z','#5c4a38'],
+  ['M101,29 C98,14 78,6 54,14 C74,12 90,20 95,32Z','#f4ecd8']
+]);
+var IB_RIM=new Path2D('M101,28 C98,13 78,5 54,13 M30,45 L46,40 L66,40 L84,43 L92,51');
+var IB_LEAP=[['M78,68 L102,78','#8c6f4b'],['M46,68 L26,84','#8c6f4b'],['M88,66 L112,72','#b8996d'],['M36,64 L12,76','#b8996d']];
+var IB_LEAPP=[]; (function(){ for(var i=0;i<IB_LEAP.length;i++) IB_LEAPP.push(new Path2D(IB_LEAP[i][0])); })();
+
+function drawGoat(){
+  var f=g.face, x=g.x, y=g.y, air=!g.ground, SC=0.30;
+  var cr=1, rot=0, leap=false, i;
+  if(st==='dead'&&deadWhy==='Fell'){ rot=tAll*2.6*f; leap=true; }
+  else if(air){
+    rot=clamp(Math.atan2(g.vy,Math.abs(g.vx)+80)*0.6,-0.5,0.6)*f;
+    leap=g.vy<=120;
+  }else{
+    if(aim) cr=0.82;
+    else if(idle<0.12) cr=0.88+(idle/0.12)*0.12;
+    else cr=1+0.012*Math.sin(tAll*3);
+  }
+  ctx.save();
+  ctx.translate(x,y-12*cr); ctx.rotate(rot); ctx.scale(f*SC,SC*cr); ctx.translate(-60,-60);
+  ctx.lineJoin='round'; ctx.strokeStyle=INK; ctx.lineWidth=1.2/SC;
+  if(leap){
+    ctx.lineCap='round';
+    for(i=0;i<4;i++){ ctx.strokeStyle=INK; ctx.lineWidth=7; ctx.stroke(IB_LEAPP[i]); ctx.strokeStyle=IB_LEAP[i][1]; ctx.lineWidth=4.6; ctx.stroke(IB_LEAPP[i]); }
+    ctx.strokeStyle=INK; ctx.lineWidth=1.2/SC;
+  }else paintList(IB_LEGS);
+  paintList(IB_UP);
+  ctx.strokeStyle='rgba(255,255,255,0.85)'; ctx.lineWidth=1/SC; ctx.stroke(IB_RIM);
+  ctx.fillStyle=INK; ctx.fillRect(107,34,3,3);
+  ctx.restore();
+}
+
+var LE_TAIL=mk([['M44,54 C26,56 12,50 10,36 L5,38 C7,58 26,68 46,64Z','#b9c3d6']]);
+var LE_BODY=mk([
+  ['M40,56 L50,44 L80,40 L110,42 L128,48 L138,58 L130,70 L100,76 L70,76 L48,72 L40,64Z','#b9c3d6'],
+  ['M40,64 L48,72 L70,76 L100,76 L130,70 L138,58 L128,60 L100,62 L70,62 L44,62Z','#8794ab',0],
+  ['M124,46 L140,46 L150,54 L146,68 L132,68Z','#b9c3d6'],
+  ['M140,50 L152,46 L166,52 L172,60 L168,68 L152,70 L142,64Z','#b9c3d6'],
+  ['M146,50 L148,38 L157,47Z','#b9c3d6']
+]);
+var LE_FAR_A=mk([['M108,68 L116,68 L110,90 L103,90Z','#8794ab'],['M64,70 L72,70 L76,90 L69,90Z','#8794ab']]);
+var LE_NEAR_A=mk([['M120,64 L130,64 L142,90 L133,90Z','#b9c3d6'],['M48,68 L58,68 L44,90 L35,90Z','#b9c3d6']]);
+var LE_FAR_B=mk([['M108,68 L116,68 L124,88 L117,89Z','#8794ab'],['M64,70 L72,70 L56,88 L49,87Z','#8794ab']]);
+var LE_NEAR_B=mk([['M120,64 L130,64 L130,90 L122,90Z','#b9c3d6'],['M48,68 L58,68 L60,90 L52,90Z','#b9c3d6']]);
+var LE_RIM=new Path2D('M50,43 L80,39 L110,41 L128,47');
+var LE_DOTS=[[62,52],[82,48],[102,50],[72,62],[94,62],[118,58]];
+
+function drawLeopard(){
+  var o=leop, y=o.y, x=o.x;
+  if(y>camY+H+90||y<camY-140) return;
+  var SC=0.70, i, f=o.face, s=o.st, a=false, sy=1, rot=0, bob=0, glow=0, p=0;
+  if(s==='leap'||s==='fall'){
+    a=true; rot=clamp(Math.atan2(o.vy,Math.abs(o.vx)+60)*0.6,-0.55,0.6)*f;
+    if(s==='leap') sy=1.05;
+  }else if(s==='crouch'){
+    p=clamp(1-o.t/o.cd,0,1); sy=1-0.2*p; rot=-0.07*p*f; if(o.pounce) glow=p;
+  }else if(s==='stumble'){
+    a=true; rot=Math.sin(tAll*16)*0.22; sy=0.88;
+  }else{
+    sy=1-o.sq; bob=Math.sin(tAll*3)*0.5;
+  }
+  /* pounce telegraph: red landing bar on the ibex's ledge, brighter as the launch nears */
+  if(TELEGRAPH_MARK&&s==='crouch'&&o.pounce&&o.tl){
+    ctx.fillStyle='rgba(229,72,77,'+(0.25+0.55*p*(0.7+0.3*Math.sin(tAll*20)))+')';
+    ctx.fillRect(o.tx-LEO.HW,o.tl.y-1,LEO.HW*2,3);
+  }
+  ctx.save();
+  ctx.translate(x,y-22+22*(1-sy)+bob);
+  ctx.rotate(rot); ctx.scale(f*SC,SC*sy); ctx.translate(-88,-58);
+  ctx.lineJoin='round'; ctx.strokeStyle=INK; ctx.lineWidth=1.2/SC;
+  paintList(a?LE_FAR_A:LE_FAR_B);
+  ctx.save(); ctx.translate(44,58); ctx.rotate(Math.sin(tAll*2.2)*0.07); ctx.translate(-44,-58); paintList(LE_TAIL); ctx.restore();
+  paintList(LE_BODY);
+  paintList(a?LE_NEAR_A:LE_NEAR_B);
+  ctx.fillStyle='#3a3f5a';
+  for(i=0;i<LE_DOTS.length;i++){ ctx.beginPath(); ctx.arc(LE_DOTS[i][0],LE_DOTS[i][1],3,0,Math.PI*2); ctx.fill(); }
+  ctx.fillStyle='#d7e86a'; ctx.beginPath(); ctx.ellipse(158,56,3.8,2.7,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle=INK; ctx.beginPath(); ctx.ellipse(158.6,56,1,2.4,0,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,0.7)'; ctx.lineWidth=1/SC; ctx.stroke(LE_RIM);
+  var gap=y-g.y;
+  if(glow>0){
+    ctx.fillStyle='rgba(215,232,106,'+(0.3+0.5*glow)+')'; ctx.beginPath(); ctx.arc(158,56,9+7*glow,0,Math.PI*2); ctx.fill();
+  }else if(gap<220){
+    var pulse=0.5+0.5*Math.sin(tAll*7);
+    ctx.fillStyle='rgba(215,232,106,'+(0.25+0.2*pulse)+')'; ctx.beginPath(); ctx.arc(158,56,9,0,Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawAim(){
+  if(!aim||!g.ground) return;
+  var dx=(aim.sx-aim.cx)/S, dy=(aim.sy-aim.cy)/S, len=Math.hypot(dx,dy);
+  if(len<4) return;
+  var l=Math.min(len,PULL), v=l/PULL*MAXV;
+  var vx=dx/len*v, vy=dy/len*v, x=g.x, y=g.y-8, u=vx, w=vy;
+  ctx.fillStyle='rgba(242,166,90,0.9)';
+  for(var i=0;i<22;i++){
+    w+=GR*0.03; x+=u*0.03; y+=w*0.03;
+    if(x<8||x>W-8) break;
+    ctx.globalAlpha=1-i/24;
+    ctx.beginPath(); ctx.arc(x,y,2.2-i*0.04,0,Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha=1;
+  ctx.strokeStyle='rgba(238,243,247,0.5)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(g.x,g.y-8); ctx.lineTo(g.x-dx*0.6,g.y-8-dy*0.6); ctx.stroke();
+  ctx.beginPath(); ctx.arc(g.x-dx*0.6,g.y-8-dy*0.6,4,0,Math.PI*2); ctx.stroke();
+}
+
+/* snow: three depth bands, 6 to 36 flakes depending on altitude, computed from time and camera (no state) */
+function drawSnow(){
+  var n=Math.round(6+clamp(g.m/140,0,1)*30), HH=H+20, i;
+  ctx.fillStyle='rgba(238,243,247,0.8)';
+  for(i=0;i<n;i++){
+    var b=i%3, sp=[22,38,60][b], par=[0.6,1,1.4][b], sz=[1.4,1.9,2.4][b];
+    var x=hash(i+7)*W+tAll*wind*(0.25+b*0.2)+Math.sin(tAll*0.8+i)*6;
+    var y=hash(i+31)*HH+tAll*sp-camY*par*0.5;
+    x=((x%W)+W)%W; y=((y%HH)+HH)%HH-10;
+    ctx.fillRect(x,y,sz,sz);
+  }
+}
+
+/* title: large perched ibex, low sun (in the sky cache), leopard eyes in the dark */
+function drawTitleArt(){
+  var lx=W*0.69, ly=H*0.82, i;
+  ctx.fillStyle='#141c26'; ctx.beginPath();
+  ctx.moveTo(0,H*0.9); ctx.lineTo(W*0.15,H*0.885); ctx.lineTo(W*0.33,H*0.91); ctx.lineTo(W*0.5,H*0.89); ctx.lineTo(W,H*0.865); ctx.lineTo(W,H+10); ctx.lineTo(0,H+10); ctx.closePath(); ctx.fill();
+  drawLedge({x:lx-95,y:ly,w:190,type:0,seed:3,tm:-1});
+  ctx.save(); ctx.translate(lx-66,ly-100); ctx.lineJoin='round'; ctx.strokeStyle=INK; ctx.lineWidth=1.4;
+  paintList(IB_LEGS); paintList(IB_UP);
+  ctx.strokeStyle='rgba(255,255,255,0.8)'; ctx.lineWidth=1; ctx.stroke(IB_RIM);
+  ctx.fillStyle=INK; ctx.beginPath(); ctx.arc(108,35,1.6,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+  var blink=Math.sin(tAll*0.7)>0.96?0.2:1, ex=[W*0.22,W*0.27], ey=H*0.945;
+  for(i=0;i<2;i++){
+    ctx.fillStyle='rgba(215,232,106,0.18)'; ctx.beginPath(); ctx.arc(ex[i],ey,10,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#d7e86a'; ctx.beginPath(); ctx.ellipse(ex[i],ey,3.6,2.4*blink,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=INK; ctx.beginPath(); ctx.ellipse(ex[i]+0.4,ey,0.9,2.1*blink,0,0,Math.PI*2); ctx.fill();
+  }
+}
+
+var hudGr=null, hudGrH=0;
+function drawHUD(){
+  if(!hudGr||hudGrH!==H){ hudGr=ctx.createLinearGradient(0,0,0,84); hudGr.addColorStop(0,'rgba(13,19,27,0.62)'); hudGr.addColorStop(1,'rgba(13,19,27,0)'); hudGrH=H; }
+  ctx.fillStyle=hudGr; ctx.fillRect(0,0,W,84);
+  ctx.textBaseline='top';
+  ctx.fillStyle='rgba(238,243,247,0.97)';
+  ctx.font='700 30px "Barlow Condensed","Arial Narrow",sans-serif';
+  ctx.textAlign='left';
+  ctx.fillText(Math.floor(g.m)+' m',12,8);
+  ctx.font='500 11px "IBM Plex Mono",monospace';
+  ctx.fillStyle='rgba(238,243,247,0.75)';
+  ctx.fillText(hudObj(),12,46);
+  var cxw=W/2, cyw=26;
+  ctx.textAlign='center';
+  ctx.fillText('WIND',cxw,12);
+  var wl=wind/160*40;
+  ctx.strokeStyle='rgba(143,211,232,0.95)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(cxw,cyw+6); ctx.lineTo(cxw+wl,cyw+6); ctx.stroke();
+  if(Math.abs(wl)>4){ var dir=wl>0?1:-1; ctx.beginPath(); ctx.moveTo(cxw+wl,cyw+6); ctx.lineTo(cxw+wl-dir*5,cyw+2); ctx.lineTo(cxw+wl-dir*5,cyw+10); ctx.closePath(); ctx.fillStyle='rgba(143,211,232,0.95)'; ctx.fill(); }
+  if(!leopOn) return;
+  var gap=Math.max(0,leop.y-g.y);
+  var near=clamp(1-gap/620,0,1);
+  ctx.textAlign='right'; ctx.fillStyle=near>0.6?'#ff7a7e':'rgba(238,243,247,0.75)';
+  ctx.font='500 11px "IBM Plex Mono",monospace';
+  ctx.fillText('LEOPARD '+Math.round(gap/8)+' m',W-12,state_hudY());
+  ctx.fillStyle='rgba(238,243,247,0.2)'; ctx.fillRect(W-92,state_hudY()+16,80,4);
+  ctx.fillStyle=near>0.6?'#e5484d':'#f2a65a'; ctx.fillRect(W-92,state_hudY()+16,80*near,4);
+}
+function state_hudY(){ return 58; }
+
+/* level HUD: clock top centre under the wind gauge (counts down on timed levels) */
+function drawLvHUD(){
+  var t=LV.time?LV.time-lvT:lvT, low=LV.time&&t<10;
+  ctx.textBaseline='top'; ctx.textAlign='center';
+  ctx.font='700 24px "Barlow Condensed","Arial Narrow",sans-serif';
+  ctx.fillStyle=low?'#ff7a7e':'rgba(238,243,247,0.97)';
+  ctx.fillText(fmtT(t),W/2,40);
+  if(st==='play'&&LV.type==='flowers'){
+    for(var i=0;i<flowers.length;i++){ if(!flowers[i].got&&flowers[i].y>camY+H){
+      ctx.textAlign='center'; ctx.font='500 11px "IBM Plex Mono",monospace'; ctx.fillStyle='#f2a65a'; ctx.fillText('FLOWER BELOW',W/2,H-24); break; } }
+  }
+}
+/* summit cairn with a flag, and the flowers */
+function drawLvWorld(){
+  var i, f, b, a, x, y;
+  if(summitL){
+    x=summitL.x+summitL.w*0.5; y=summitL.y;
+    ctx.fillStyle='#5a6877'; ctx.beginPath(); ctx.moveTo(x-22,y); ctx.lineTo(x-16,y-12); ctx.lineTo(x+14,y-13); ctx.lineTo(x+22,y); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#7c8a98'; ctx.beginPath(); ctx.moveTo(x-14,y-12); ctx.lineTo(x-9,y-23); ctx.lineTo(x+8,y-23); ctx.lineTo(x+13,y-12); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#eef3f7'; ctx.beginPath(); ctx.moveTo(x-7,y-23); ctx.lineTo(x-3,y-32); ctx.lineTo(x+5,y-32); ctx.lineTo(x+8,y-23); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle='#c4d0da'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x,y-32); ctx.lineTo(x,y-62); ctx.stroke();
+    a=Math.sin(tAll*4)*3;
+    ctx.fillStyle='#f2a65a'; ctx.beginPath(); ctx.moveTo(x,y-62); ctx.lineTo(x+22,y-57+a); ctx.lineTo(x,y-48); ctx.closePath(); ctx.fill();
+  }
+  for(i=0;i<flowers.length;i++){
+    f=flowers[i]; if(f.got||f.y<camY-30||f.y>camY+H+30) continue;
+    b=Math.sin(tAll*3+f.x*0.1)*1.6; x=f.x; y=f.y+b;
+    ctx.fillStyle='rgba(242,166,90,0.16)'; ctx.beginPath(); ctx.arc(x,y,15,0,6.2832); ctx.fill();
+    ctx.strokeStyle='#8fb59a'; ctx.lineWidth=1.6; ctx.beginPath(); ctx.moveTo(x,y+4); ctx.lineTo(x,f.y+26); ctx.stroke();
+    ctx.fillStyle='#eef3f7';
+    for(a=0;a<6;a++){ ctx.beginPath(); ctx.arc(x+Math.cos(a*1.0472+tAll)*5,y+Math.sin(a*1.0472+tAll)*5,3.2,0,6.2832); ctx.fill(); }
+    ctx.fillStyle='#f2a65a'; ctx.beginPath(); ctx.arc(x,y,2.8,0,6.2832); ctx.fill();
+  }
+}
+
+
+function drawVignette(){
+  var t=clamp(g.m/200,0,1)*0.55;
+  var gap=Math.max(0,leop.y-g.y), near=clamp(1-gap/300,0,1);
+  var pulse=0.5+0.5*Math.sin(tAll*7);
+  var gr=ctx.createRadialGradient(W/2,H*0.55,H*0.25,W/2,H*0.55,H*0.75);
+  gr.addColorStop(0,'rgba(0,0,0,0)');
+  gr.addColorStop(1,near>0?'rgba(229,72,77,'+(near*0.5*(0.6+0.4*pulse))+')':'rgba(0,0,0,'+t+')');
+  ctx.fillStyle=gr; ctx.fillRect(0,0,W,H);
+  if(near>0&&t>0){ var g2=ctx.createRadialGradient(W/2,H*0.55,H*0.3,W/2,H*0.55,H*0.8); g2.addColorStop(0,'rgba(0,0,0,0)'); g2.addColorStop(1,'rgba(0,0,0,'+t+')'); ctx.fillStyle=g2; ctx.fillRect(0,0,W,H); }
+}
+
+function render(){
+  var sk=shake>0?Math.sin(tAll*80)*shake*1.5:0;
+  palette(g.m); buildSky();
+  ctx.setTransform(dpr*S,0,0,dpr*S,0,0);
+  drawSky();
+  ctx.setTransform(dpr*S,0,0,dpr*S,sk*dpr*S,-camY*dpr*S);
+  drawWalls();
+  if(st!=='title'){
+    for(var i=0;i<ledges.length;i++){ var L=ledges[i]; if(L.alive&&L.y>camY-30&&L.y<camY+H+30) drawLedge(L); }
+    drawLvWorld();
+    if(leopOn) drawLeopard();
+    drawGoat();
+    drawAim();
+  }
+  for(var j=0;j<debris.length;j++){ var d=debris[j]; ctx.globalAlpha=clamp(d.life*2,0,1); ctx.fillStyle=d.c; ctx.fillRect(d.x,d.y,d.s,d.s); }
+  ctx.globalAlpha=1;
+  ctx.setTransform(dpr*S,0,0,dpr*S,0,0);
+  drawSnow();
+  if(st==='title') drawTitleArt();
+  drawVignette();
+  if(st!=='title') drawHUD();
+  if(st!=='title'&&LV) drawLvHUD();
+}
+
+/* ---------- loop ---------- */
+var last=0;
+function frame(ts){
+  var raw=(ts-last)||16; var dt=Math.min(0.033,raw/1000||0.016); last=ts;
+  if(st==='play'&&dprCap>1){ if(raw>24) slowN++; else if(slowN>0) slowN--; if(slowN>90){ slowN=0; dprCap=Math.max(1,dprCap-0.5); resize(); } }
+  update(dt); render();
+  requestAnimationFrame(frame);
+}
+resize(); reset();
+requestAnimationFrame(frame);
+})();
+</script>
+
+</body></html>
