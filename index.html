@@ -354,50 +354,50 @@ var LEVELS=[
  {name:'Snow Leopard',tip:'The summit is two hundred metres up. It will not stop hunting you.',type:'summit',goalM:200,
   t:{gapMin:74,gapAdd:46,w:90,wMin:60,jit:175,hz0:6,pc:[0.12,0.22],pi:[0.14,0.24],wind:130},leo:{on:true,pace:2.5,n:2},par:[50,36]},
  /* ---------- levels 11-30: the upper Snow Face ----------
-    New fields: t.ps (share of plain ledges that slide), t.sv (slide speed px/s), t.sr (slide range px), t.side (share of ledges with a side spur);
+    New fields: t.ps (share of plain ledges that slide), t.sv (slide speed px/s), t.sr (slide range px), t.side (share of ledges with a side spur: a second route up, and the home of scattered flowers);
     scatter:true puts the flowers on side spurs; leaps:N = summit in N leaps or fewer; type:'lure' = make the leopard fall through cracked or icy ledges n times;
     rock:{m0,rate,aim,warn,first} = rockfall (stones per second, share aimed near the ibex, warning seconds, seconds before the first);
     leo.keep = ledges are not pruned under a lagging leopard (open-ended goals). */
  {name:'Shifting Shelf',tip:'Some ledges slide from side to side. Aim for where the ledge will be, and ride it while you line up.',type:'summit',goalM:100,
-  t:{gapMin:68,gapAdd:40,w:110,wMin:78,jit:150,hz0:6,pc:0.08,pi:0.08,wind:50,ps:0.5,sv:30,sr:70},leo:{on:true,pace:1.3,n:2},par:[30,21]},
+  t:{gapMin:68,gapAdd:40,w:110,wMin:78,jit:150,hz0:6,pc:0.08,pi:0.08,wind:50,ps:0.5,sv:30,sr:70,side:0.85},leo:{on:true,pace:0.8,n:2},par:[34,24]},
  {name:'Moving Rock',tip:'More ledges slide, and faster. The leopard has to time them too.',type:'summit',goalM:120,
-  t:{gapMin:70,gapAdd:40,w:106,wMin:74,jit:155,hz0:6,pc:0.12,pi:0.12,wind:60,ps:[0.45,0.65],sv:45,sr:90},leo:{on:true,pace:0.9,n:2},par:[41,28]},
+  t:{gapMin:70,gapAdd:40,w:106,wMin:74,jit:155,hz0:6,pc:0.12,pi:0.12,wind:60,ps:[0.45,0.65],sv:45,sr:90,side:0.85},leo:{on:true,pace:0.75,n:2},par:[40,27]},
  {name:'Hidden Bloom',tip:'The flowers grow on side ledges, off the straight line up. Detour for each one; the last grows on the summit.',type:'flowers',n:6,goalM:150,scatter:true,
-  t:{gapMin:70,gapAdd:40,w:106,wMin:74,jit:150,hz0:6,pc:0.12,pi:0.12,wind:60,side:0.9},leo:{on:true,pace:1.05,n:2},par:[47,31]},
- {name:'Sure Feet',tip:'Reach the summit in 9 leaps or fewer. Big, clean leaps that skip a ledge save the count.',type:'summit',goalM:110,leaps:9,
-  t:{gapMin:70,gapAdd:40,w:108,wMin:76,jit:150,hz0:8,pc:0.12,pi:0.1,wind:50},leo:{on:true,pace:0.9,n:3},par:[27,13]},
- {name:'Sunlit Ledge',tip:'Wide ledges and a calm sky. Catch your breath.',type:'summit',goalM:90,
-  t:{gapMin:66,gapAdd:34,w:124,wMin:88,jit:130,hz0:10,pc:0.06,pi:0.06,wind:30},leo:{on:true,pace:0.9,n:3},par:[31,21]},
+  t:{gapMin:70,gapAdd:40,w:106,wMin:74,jit:150,hz0:6,pc:0.12,pi:0.12,wind:60,side:0.9},leo:{on:true,pace:0.75,n:2},par:[46,32]},
+ {name:'Sure Feet',tip:'Reach the summit in 7 leaps or fewer. Big, clean leaps that skip a ledge save the count.',type:'summit',goalM:110,leaps:7,
+  t:{gapMin:70,gapAdd:40,w:100,wMin:70,jit:160,hz0:8,pc:0.14,pi:0.12,wind:70,side:0.85},leo:{on:true,pace:1.45,n:2},par:[23,14]},
+ {name:'Sunlit Ledge',tip:'A calmer stretch of cliff. The leopard is still close behind.',type:'summit',goalM:90,
+  t:{gapMin:68,gapAdd:36,w:112,wMin:80,jit:145,hz0:8,pc:0.1,pi:0.08,wind:40,side:0.85},leo:{on:true,pace:1.1,n:2},par:[31,21]},
  {name:'Stonefall',tip:'Loose stones fall from above. An amber mark and a trickle of grit show where. Move out from under it.',type:'summit',goalM:110,
-  t:{gapMin:68,gapAdd:38,w:110,wMin:78,jit:150,hz0:10,pc:0.1,pi:0.1,wind:40},rock:{m0:8,rate:0.35,aim:0.5,warn:1.0,first:3},leo:{on:true,pace:0.9,n:3},par:[33,23]},
+  t:{gapMin:68,gapAdd:38,w:110,wMin:78,jit:150,hz0:10,pc:0.1,pi:0.1,wind:40,side:0.85},rock:{m0:8,rate:0.35,aim:0.5,warn:1.0,first:3},leo:{on:true,pace:0.9,n:3},par:[37,27]},
  {name:'The Gully',tip:'Stonefall and loose rock all the way up the gully.',type:'summit',goalM:140,
-  t:{gapMin:70,gapAdd:40,w:104,wMin:72,jit:160,hz0:6,pc:[0.18,0.28],pi:0.1,wind:60},rock:{m0:6,rate:[0.28,0.38],aim:0.6,warn:0.9,first:2},leo:{on:true,pace:1.9,n:2},par:[38,25]},
+  t:{gapMin:70,gapAdd:40,w:104,wMin:72,jit:160,hz0:6,pc:[0.18,0.28],pi:0.1,wind:60,side:0.85},rock:{m0:6,rate:[0.28,0.38],aim:0.6,warn:0.9,first:2},leo:{on:true,pace:1.6,n:2},par:[43,29]},
  {name:'The Lure',tip:'Lead the leopard onto cracked or icy ledges. Make it fall 3 times.',type:'lure',n:3,goalM:0,
-  t:{gapMin:70,gapAdd:40,w:108,wMin:76,jit:150,hz0:4,pc:[0.12,0.28],pi:0.04,wind:50},leo:{on:true,pace:1.8,n:2,keep:true},par:[31,24]},
+  t:{gapMin:70,gapAdd:40,w:108,wMin:76,jit:150,hz0:4,pc:[0.12,0.28],pi:0.04,wind:50,side:0.85},leo:{on:true,pace:1.8,n:2,keep:true},par:[91,64]},
  {name:'Counter-Strike II',tip:'Make the leopard miss 5 times. Sliding ledges make its pounce harder to read.',type:'dodge',n:5,goalM:0,
-  t:{gapMin:70,gapAdd:40,w:108,wMin:76,jit:150,hz0:6,pc:0.1,pi:0.1,wind:60,ps:0.4,sv:40,sr:80},leo:{on:true,pace:1.9,n:2,keep:true},par:[63,44]},
+  t:{gapMin:70,gapAdd:40,w:108,wMin:76,jit:150,hz0:6,pc:0.1,pi:0.1,wind:60,ps:0.4,sv:40,sr:80,side:0.85},leo:{on:true,pace:1.9,n:2,keep:true},par:[56,39]},
  {name:"Eagle's Gate",tip:'Two hundred and forty metres. Sliding ledges, stonefall, ice and gusts, and the leopard at full speed.',type:'summit',goalM:240,
-  t:{gapMin:74,gapAdd:46,w:84,wMin:54,jit:175,hz0:6,pc:[0.12,0.22],pi:[0.14,0.24],wind:130,ps:0.3,sv:45,sr:80},rock:{m0:20,rate:[0.45,0.6],aim:0.6,warn:0.9,first:4},leo:{on:true,pace:2.7,n:2},par:[49,34]},
+  t:{gapMin:74,gapAdd:46,w:84,wMin:54,jit:175,hz0:6,pc:[0.12,0.22],pi:[0.14,0.24],wind:130,ps:0.3,sv:45,sr:80,side:0.85},rock:{m0:20,rate:[0.45,0.6],aim:0.6,warn:0.9,first:4},leo:{on:true,pace:2.7,n:2},par:[57,40]},
  {name:'Meadow Shelf',tip:'Broad ledges and five flowers. A quiet stretch after the gate.',type:'flowers',n:5,goalM:120,
-  t:{gapMin:66,gapAdd:36,w:124,wMin:88,jit:130,hz0:10,pc:0.06,pi:0.06,wind:30},leo:{on:true,pace:1.0,n:3},par:[27,18]},
+  t:{gapMin:66,gapAdd:36,w:124,wMin:88,jit:130,hz0:10,pc:0.06,pi:0.06,wind:30,side:0.85},leo:{on:true,pace:1.0,n:3},par:[27,19]},
  {name:'Few Leaps',tip:'Reach the summit in 10 leaps or fewer, on sliding ledges.',type:'summit',goalM:140,leaps:10,
-  t:{gapMin:70,gapAdd:40,w:106,wMin:74,jit:155,hz0:6,pc:0.12,pi:0.12,wind:70,ps:0.4,sv:45,sr:80},leo:{on:true,pace:1.5,n:2},par:[34,15]},
+  t:{gapMin:70,gapAdd:40,w:106,wMin:74,jit:155,hz0:6,pc:0.12,pi:0.12,wind:70,ps:0.4,sv:45,sr:80,side:0.85},leo:{on:true,pace:1.5,n:2},par:[27,16]},
  {name:'Rock and Ice',tip:'Stonefall over black ice. Leap early and keep out from under the marks.',type:'summit',goalM:160,
-  t:{gapMin:70,gapAdd:42,w:102,wMin:70,jit:160,hz0:6,pc:0.1,pi:[0.25,0.4],wind:90},rock:{m0:6,rate:[0.3,0.42],aim:0.6,warn:0.9,first:2},leo:{on:true,pace:2.4,n:2},par:[38,25]},
+  t:{gapMin:70,gapAdd:42,w:102,wMin:70,jit:160,hz0:6,pc:0.1,pi:[0.25,0.4],wind:90,side:0.85},rock:{m0:6,rate:[0.3,0.42],aim:0.6,warn:0.9,first:2},leo:{on:true,pace:2.4,n:2},par:[41,29]},
  {name:'Double Lure',tip:'Make the leopard fall 4 times, with stones coming down.',type:'lure',n:4,goalM:0,
-  t:{gapMin:70,gapAdd:40,w:106,wMin:74,jit:150,hz0:4,pc:0.25,pi:0.06,wind:60},rock:{m0:4,rate:0.2,aim:0.5,warn:1.0,first:4},leo:{on:true,pace:2.0,n:2,keep:true},par:[64,44]},
+  t:{gapMin:70,gapAdd:40,w:106,wMin:74,jit:150,hz0:4,pc:0.25,pi:0.06,wind:60,side:0.85},rock:{m0:4,rate:0.2,aim:0.5,warn:1.0,first:4},leo:{on:true,pace:2.0,n:2,keep:true},par:[82,58]},
  {name:'Quiet Col',tip:'A gentle saddle between the hard climbs.',type:'summit',goalM:110,
-  t:{gapMin:66,gapAdd:36,w:120,wMin:86,jit:135,hz0:10,pc:0.08,pi:0.08,wind:40},leo:{on:true,pace:0.9,n:3},par:[34,23]},
+  t:{gapMin:66,gapAdd:36,w:120,wMin:86,jit:135,hz0:10,pc:0.08,pi:0.08,wind:40,side:0.85},leo:{on:true,pace:0.9,n:3},par:[31,22]},
  {name:'Gale Traverse',tip:'Seven flowers on side ledges, sliding rock and the strongest gusts yet.',type:'flowers',n:7,goalM:170,scatter:true,
-  t:{gapMin:70,gapAdd:40,w:104,wMin:72,jit:155,hz0:6,pc:0.12,pi:0.12,wind:140,ps:0.35,sv:45,sr:80,side:0.9},leo:{on:true,pace:2.4,n:2},par:[40,26]},
+  t:{gapMin:70,gapAdd:40,w:104,wMin:72,jit:155,hz0:6,pc:0.12,pi:0.12,wind:140,ps:0.35,sv:45,sr:80,side:0.9},leo:{on:true,pace:2.4,n:2},par:[37,26]},
  {name:'Counter-Strike III',tip:'Make the leopard miss 6 times while stones fall.',type:'dodge',n:6,goalM:0,
-  t:{gapMin:70,gapAdd:40,w:106,wMin:74,jit:150,hz0:6,pc:0.1,pi:0.1,wind:60},rock:{m0:4,rate:0.1,aim:0.5,warn:1.0,first:4},leo:{on:true,pace:2.8,n:2,keep:true},par:[47,33]},
+  t:{gapMin:70,gapAdd:40,w:106,wMin:74,jit:150,hz0:6,pc:0.1,pi:0.1,wind:60,side:0.85},rock:{m0:4,rate:0.1,aim:0.5,warn:1.0,first:4},leo:{on:true,pace:2.8,n:2,keep:true},par:[45,32]},
  {name:'Thin Air',tip:'Narrow ledges, and the summit in 10 leaps or fewer.',type:'summit',goalM:180,leaps:10,
-  t:{gapMin:72,gapAdd:44,w:80,wMin:52,jit:170,hz0:6,pc:[0.18,0.26],pi:[0.18,0.26],wind:110},leo:{on:true,pace:2.7,n:2},par:[24,16]},
+  t:{gapMin:72,gapAdd:44,w:80,wMin:52,jit:170,hz0:6,pc:[0.18,0.26],pi:[0.18,0.26],wind:110,side:0.85},leo:{on:true,pace:2.7,n:2},par:[28,20]},
  {name:'Final Approach',tip:'Every hazard on the face, and the leopard close behind.',type:'summit',goalM:220,
-  t:{gapMin:74,gapAdd:46,w:86,wMin:56,jit:175,hz0:6,pc:[0.12,0.22],pi:[0.14,0.24],wind:130,ps:0.3,sv:45,sr:80},rock:{m0:10,rate:[0.4,0.55],aim:0.6,warn:0.9,first:4},leo:{on:true,pace:3.2,n:2},par:[46,34]},
+  t:{gapMin:74,gapAdd:46,w:86,wMin:56,jit:175,hz0:6,pc:[0.12,0.22],pi:[0.14,0.24],wind:130,ps:0.3,sv:45,sr:80,side:0.85},rock:{m0:10,rate:[0.4,0.55],aim:0.6,warn:0.9,first:4},leo:{on:true,pace:3.2,n:2},par:[53,38]},
  {name:'Snow Face Summit',tip:'Two hundred and eighty metres to the top of the Snow Face. The leopard is at its fastest.',type:'summit',goalM:280,
-  t:{gapMin:74,gapAdd:46,w:84,wMin:54,jit:175,hz0:6,pc:[0.12,0.22],pi:[0.14,0.26],wind:140,ps:0.3,sv:50,sr:80},rock:{m0:10,rate:[0.4,0.6],aim:0.6,warn:0.9,first:4},leo:{on:true,pace:3.2,n:2},par:[56,39]}
+  t:{gapMin:74,gapAdd:46,w:84,wMin:54,jit:175,hz0:6,pc:[0.12,0.22],pi:[0.14,0.26],wind:140,ps:0.3,sv:50,sr:80,side:0.85},rock:{m0:10,rate:[0.4,0.6],aim:0.6,warn:0.9,first:4},leo:{on:true,pace:3.2,n:2},par:[66,46]}
 ];
 var lv=null, LV=null, lr=Math.random, flowers=[], got=0, dodges=0, leaps=0, lures=0, rocks=[], rockT=0, lvT=0, sumY=0, summitL=null, leopOn=true, leoPace=1;
 var prog={s:[]}, unlockAll=false, winStars=0;
@@ -443,7 +443,7 @@ function addLedgeLv(){
   var NL={x:cx-w/2,y:genY,w:w,type:type,tm:-1,dir:lr()<0.5?-1:1,alive:true,seed:lr()*100};
   ledges.push(NL);
   if(T.ps&&type===0&&m>T.hz0&&lr()<tv(T.ps,p)) slideLedge(NL,T);
-  if(T.side&&m>T.hz0&&!(LV.goalM&&genY<-LV.goalM*8+120)&&lr()<tv(T.side,p)) addSide(NL,T,p);
+  if(T.side&&m>3&&!(LV.goalM&&genY<-LV.goalM*8+120)&&lr()<tv(T.side,p)) addSide(NL,T,p);
 }
 /* sliding ledge: drifts between a and b at mv px/s and carries whoever stands on it */
 function slideLedge(L,T){
@@ -471,10 +471,11 @@ function moveLedges(dt){
 }
 /* side ledge: a spur at about the same height on the far side, off the direct line (holds scattered flowers) */
 function addSide(L,T,p){
-  var w2=Math.max(T.wMin,tv(T.w,p))*(0.75+lr()*0.2), c=L.x+L.w/2, dir=c<W/2?1:-1;
-  var c2=c+dir*(L.w/2+w2/2+36+lr()*70);
+  var w2=Math.max(T.wMin,tv(T.w,p))*(0.75+lr()*0.2), c=L.x+L.w/2, r=lr(), c2;
+  /* on the other half of the cliff from the main ledge, so a second line up exists away from the leopard */
+  c2=c+(c<W/2?1:-1)*(150+r*70);
   c2=clamp(c2,w2/2+12,W-w2/2-12);
-  if(Math.abs(c2-c)<(L.w+w2)/2+26) return;
+  if(Math.abs(c2-c)<Math.max(125,(L.w+w2)/2+20)) return;
   ledges.push({x:c2-w2/2,y:L.y-8-lr()*18,w:w2,type:0,tm:-1,dir:1,alive:true,seed:lr()*100,side:true});
 }
 function addLedge(){
