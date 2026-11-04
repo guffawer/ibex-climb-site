@@ -60,6 +60,17 @@ button.alt{background:rgba(238,243,247,.14);color:var(--snow)}
 .row{display:flex;gap:10px;flex-wrap:wrap}
 .kicker{font-family:var(--font-data);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ice)}
 .panel .stars{font-family:var(--font-display);font-size:44px;line-height:1;color:var(--glow);letter-spacing:.12em}
+/* economy */
+.coinbar{display:flex;align-items:center;gap:12px;width:100%;font-family:var(--font-display);font-size:24px;letter-spacing:.06em;text-transform:uppercase}
+.coinbar b{color:var(--glow)}
+button.sm{min-height:36px;padding:6px 14px;font-size:16px}
+.eco{display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+#shop,#adp{justify-content:flex-start;padding-top:max(60px,9vh);background:rgba(13,19,27,.94);overflow-y:auto}
+#adp{justify-content:center;align-items:center;text-align:center}
+.shopi{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;font-size:19px;padding:10px 16px}
+.shopi small{font-family:var(--font-data);font-size:11px;letter-spacing:.04em;font-weight:500}
+#toast{position:absolute;left:8px;right:8px;bottom:20px;padding:10px 12px;background:rgba(238,243,247,.95);color:var(--ink);font-size:12px;border-radius:3px;text-align:center;pointer-events:none;z-index:50}
+#toast[hidden]{display:none}
 </style>
 
 <div id="stage">
@@ -75,12 +86,14 @@ button.alt{background:rgba(238,243,247,.14);color:var(--snow)}
     <h1 id="why">Fell</h1>
     <div class="stat" id="dS1">Altitude <b>0</b> m</div>
     <div class="stat" id="dS2">Best <b>0</b> m</div>
+    <div class="eco" id="dEco"><div class="stat" id="dC"></div><div class="row"><button id="cAd" type="button" hidden>Continue (watch ad)</button><button id="cCoin" type="button" class="alt" hidden>Continue</button></div></div>
     <div class="row"><button id="again" type="button">Retry</button><button id="dLv" type="button" class="alt">Levels</button></div>
   </div>
   <div id="levels" class="panel" hidden>
     <div class="kicker">The Snow Face</div>
     <h1>Choose <em>level</em></h1>
     <div id="lgrid" class="lgrid"></div>
+    <div class="coinbar"><span id="coinsL">Coins <b>0</b></span><button id="shopB" type="button" class="alt sm">Shop</button></div>
     <div class="row"><button id="endless" type="button" class="alt">Endless climb</button><button id="unl" type="button" class="alt">Test: unlock all</button></div>
   </div>
   <div id="intro" class="panel" hidden>
@@ -95,9 +108,26 @@ button.alt{background:rgba(238,243,247,.14);color:var(--snow)}
     <h1 id="wH">Summit</h1>
     <div class="stars" id="wS">&#9733;&#9733;&#9733;</div>
     <div class="stat">Time <b id="wT">0</b> s</div>
+    <div class="stat" id="wC" hidden></div>
+    <div class="row"><button id="wDbl" type="button" hidden>Double (watch ad)</button></div>
     <p id="wP"></p>
     <div class="row"><button id="wNext" type="button">Next level</button><button id="wAgain" type="button" class="alt">Replay</button><button id="wLv" type="button" class="alt">Levels</button></div>
   </div>
+  <div id="shop" class="panel" hidden>
+    <div class="kicker">Shop (test build: no real charges)</div>
+    <h1>Coin <em>shop</em></h1>
+    <div class="stat" id="shopC">Coins <b>0</b></div>
+    <div id="shopList" class="eco" style="width:100%"></div>
+    <div class="row"><button id="shopX" type="button" class="alt">Back</button></div>
+  </div>
+  <div id="adp" class="panel" hidden>
+    <div class="kicker" id="adK">Test ad</div>
+    <h1 id="adH">Ad</h1>
+    <p id="adP">Placeholder for a real ad. The store build will show an AdMob ad here.</p>
+    <div class="stat" id="adC"></div>
+    <div class="row"><button id="adB" type="button" class="alt">Close</button></div>
+  </div>
+  <div id="toast" hidden></div>
 </div>
 
 <script>
@@ -704,6 +734,7 @@ function reset(){
   wind=0; windTarget=0; windT=2; tAll=0;
   if(!leopOn){ leop.st='off'; leop.y=1e6; leop.py=1e6; }
   leops=[leop];
+  try{ econReset(); }catch(e){}
 }
 /* flowers hang above evenly spaced plain ledges; the last grows on the summit */
 function placeFlowers(){
@@ -734,6 +765,7 @@ function die(reason){
     s2.innerHTML=LV.type==='flowers'?('Flowers <b>'+got+'</b> of '+LV.n):LV.type==='dodge'?('Misses <b>'+dodges+'</b> of '+LV.n):LV.type==='lure'?('Leopard falls <b>'+lures+'</b> of '+LV.n):LV.type==='rescue'?('Kids <b>'+freed+'</b> of '+LV.n):LV.leaps?('Leaps <b>'+leaps+'</b> of '+LV.leaps):('Time <b>'+fmtT(lvT)+'</b>');
   }
   deadP.hidden=false;
+  try{ econDead(reason,m); }catch(e){}
   buzz([30,40,70]);
   sDeath(reason);
 }
@@ -756,6 +788,7 @@ function win(){
   document.getElementById('wP').textContent=n>=3?'Perfect run.':(n===2?'Three stars: under '+LV.par[1]+' s.':'Two stars: under '+LV.par[0]+' s.');
   document.getElementById('wNext').hidden=(lv>=LEVELS.length-1);
   winP.hidden=false;
+  try{ econWin(n); }catch(e){}
   sWin(); buzz([40,40,40,40,120]);
 }
 /* a crumbling ledge loses only the chunk under whoever stood on it; the rest stays (still cracked) so the climb can be retried */
@@ -1060,7 +1093,7 @@ function buildLevels(){
 }
 /* with 60 levels the grid is taller than a phone screen: open it scrolled to the next level to play */
 function scrollToCur(){ var c=levelsP.dataset.cur, bs, r; if(c===''||c===undefined) return; bs=document.querySelectorAll('#lgrid .lb'); if(!bs[+c]) return; r=bs[+c].getBoundingClientRect(); if(r.bottom>levelsP.clientHeight-20) levelsP.scrollTop+=r.top-levelsP.clientHeight*0.45; }
-function openLevels(){ buildLevels(); toMenu(levelsP); levelsP.scrollTop=0; scrollToCur(); }
+function openLevels(){ buildLevels(); try{ econRefresh(); }catch(e){} toMenu(levelsP); levelsP.scrollTop=0; scrollToCur(); }
 function openIntro(i){
   lv=i; var L=LEVELS[i];
   document.getElementById('iK').textContent='Level '+(i+1)+' of '+LEVELS.length;
@@ -1697,6 +1730,156 @@ function frame(ts){
   requestAnimationFrame(frame);
 }
 resize(); reset();
+/* ---------- economy: coins, continue, rewarded and interstitial ads, shop ----------
+   Test build: ads and purchases are mocks (window.IbexEcon.ads / .buy are the seams a native build replaces).
+   Nothing here touches level data, ledge layout, the leopard or the physics; it uses no random numbers. */
+var ECO_KEY='ibexEco', ECO_CONT=[100,200,400], ECO_CONT_FROM=19, ECO_RESCUE=500;
+var ECO_BUNDLES=[{id:'c500',coins:500,usd:'0.99'},{id:'c1800',coins:1800,usd:'2.99'},{id:'c3500',coins:3500,usd:'4.99'},{id:'c8000',coins:8000,usd:'9.99'}];
+var eco={coins:100,paid:[],noAds:false,starterBought:false,starterUntil:0,clears:0,lastAd:0,interAt:-1};
+var ecoRun={ad:false,paidN:0,earned:0}, ecoWin={add:0,doubled:false}, ecoPass=false, ecoFast=false, ecoToastT=null;
+try{ ecoFast=(location.search||'').indexOf('ecotest')>=0; }catch(e){}
+try{ var ecoS=JSON.parse(localStorage.getItem(ECO_KEY)||'null'); if(ecoS&&typeof ecoS.coins==='number'){ for(var ek in ecoS) eco[ek]=ecoS[ek]; } }catch(e){}
+function ecoSave(){ try{ localStorage.setItem(ECO_KEY,JSON.stringify(eco)); }catch(e){} }
+function $e(id){ return document.getElementById(id); }
+function ecoToast(t){ var el=$e('toast'); el.textContent=t; el.hidden=false; clearTimeout(ecoToastT); ecoToastT=setTimeout(function(){ el.hidden=true; },2200); }
+/* overlays sit above whichever menu panel is open and hand back to it */
+var shopP=$e('shop'), adP=$e('adp'), ovFrom=null;
+function ovOpen(p){ var a=[titleP,levelsP,introP,deadP,winP], i; ovFrom=null; for(i=0;i<a.length;i++){ if(!a[i].hidden){ ovFrom=a[i]; a[i].hidden=true; } } p.hidden=false; }
+function ovClose(p){ p.hidden=true; if(ovFrom) ovFrom.hidden=false; ovFrom=null; }
+function ecoRefresh(){
+  var h='Coins <b>'+eco.coins+'</b>';
+  $e('coinsL').innerHTML=h; $e('shopC').innerHTML=h;
+}
+/* mock ad: a countdown panel. A rewarded ad pays only if the player waits for the end. */
+function mockAd(rewarded,done){
+  var left=rewarded?5:3, t, b=$e('adB'), c=$e('adC');
+  $e('adK').textContent=rewarded?'Rewarded ad (test)':'Ad (test)';
+  $e('adH').textContent=rewarded?'Watch to earn':'Sponsored';
+  ovOpen(adP); b.textContent=rewarded?'Skip (no reward)':'Wait'; b.disabled=!rewarded;
+  c.innerHTML='<b>'+left+'</b> s';
+  function finish(ok){ clearInterval(t); b.onclick=null; ovClose(adP); done(ok); }
+  t=setInterval(function(){
+    left--;
+    if(left>0){ c.innerHTML='<b>'+left+'</b> s'; return; }
+    clearInterval(t); c.innerHTML='Done';
+    b.disabled=false; b.textContent=rewarded?'Claim reward':'Close'; b.onclick=function(){ finish(rewarded); };
+  },1000);
+  if(rewarded) b.onclick=function(){ finish(false); };
+}
+function mockBuy(sku,done){ ecoToast('Test purchase, no charge'); done(true); }
+window.IbexEcon={
+  ads:{ rewarded:function(done){ mockAd(true,done); }, interstitial:function(done){ mockAd(false,done); } },
+  buy:mockBuy,
+  state:function(){ return eco; }
+};
+function ecoAd(kind,done){ var f=window.IbexEcon&&window.IbexEcon.ads&&window.IbexEcon.ads[kind]; if(f) f(done); else done(false); }
+function ecoGrant(sku){
+  var i;
+  for(i=0;i<ECO_BUNDLES.length;i++) if(ECO_BUNDLES[i].id===sku) eco.coins+=ECO_BUNDLES[i].coins;
+  if(sku==='noads') eco.noAds=true;
+  if(sku==='starter'){ eco.coins+=500; eco.starterBought=true; eco.starterUntil=Date.now()+7*86400000; }
+  if(sku==='rescue') eco.coins+=ECO_RESCUE;
+  ecoSave(); ecoRefresh();
+}
+function ecoBuy(sku,done){ var f=(window.IbexEcon&&window.IbexEcon.buy)||mockBuy; f(sku,function(ok){ if(ok) ecoGrant(sku); if(done) done(ok); }); }
+function ecoShop(){
+  var h='', i, B=ECO_BUNDLES;
+  h+='<button type="button" class="shopi" data-sku="noads"'+(eco.noAds?' disabled':'')+'>Remove ads<small>'+(eco.noAds?'OWNED':'USD 3.99')+'</small></button>';
+  h+='<button type="button" class="shopi" data-sku="starter"'+(eco.starterBought?' disabled':'')+'>Starter pack: 500 coins, 7 days no ads<small>'+(eco.starterBought?'OWNED':'USD 1.99')+'</small></button>';
+  for(i=0;i<B.length;i++) h+='<button type="button" class="shopi alt" data-sku="'+B[i].id+'">'+B[i].coins+' coins<small>USD '+B[i].usd+'</small></button>';
+  $e('shopList').innerHTML=h; ecoRefresh();
+}
+$e('shopList').addEventListener('click',function(e){
+  var b=e.target.closest?e.target.closest('button'):null; if(!b||b.disabled||!b.getAttribute('data-sku')) return;
+  ecoBuy(b.getAttribute('data-sku'),function(){ ecoShop(); });
+});
+$e('shopB').addEventListener('click',function(){ ecoShop(); ovOpen(shopP); });
+$e('shopX').addEventListener('click',function(){ ovClose(shopP); ecoRefresh(); });
+function ecoReset(){ ecoRun={ad:false,paidN:0,earned:0}; }
+/* clear: coins by stars (levels 31-60 pay 1.5x), replay pays only the gain; optional rewarded ad doubles it */
+function ecoWinHook(n){
+  var tab=(lv>=30)?[30,60,90]:[20,40,60], was=eco.paid[lv]||0, add=0;
+  if(n>was){ add=tab[n-1]-(was?tab[was-1]:0); eco.paid[lv]=n; }
+  eco.coins+=add; eco.clears++; ecoWin={add:add,doubled:false}; ecoSave();
+  $e('wC').hidden=false; $e('wC').innerHTML='Coins <b>+'+add+'</b> / total '+eco.coins;
+  $e('wDbl').hidden=(add<=0); $e('wDbl').textContent='Double +'+add+' (watch ad)'; $e('wDbl').disabled=false;
+  ecoRefresh();
+}
+$e('wDbl').addEventListener('click',function(){
+  if(ecoWin.doubled||ecoWin.add<=0) return;
+  ecoAd('rewarded',function(ok){
+    if(!ok) return;
+    ecoWin.doubled=true; eco.coins+=ecoWin.add; ecoSave();
+    $e('wC').innerHTML='Coins <b>+'+(ecoWin.add*2)+'</b> / total '+eco.coins; $e('wDbl').hidden=true; ecoRefresh();
+  });
+});
+/* interstitial: after a clear only, from level 8, every 3rd clear, 3 min since any ad, never after a death or in endless */
+function ecoInterDue(){
+  var now=Date.now();
+  if(eco.noAds||now<eco.starterUntil||eco.interAt===eco.clears) return false;
+  if(!ecoFast&&(lv<7||now-eco.lastAd<180000)) return false;
+  return eco.clears>0&&eco.clears%3===0;
+}
+winP.addEventListener('click',function(e){
+  var b=e.target.closest?e.target.closest('button'):null;
+  if(!b||(b.id!=='wNext'&&b.id!=='wAgain'&&b.id!=='wLv')) return;
+  if(ecoPass){ ecoPass=false; return; }
+  if(!ecoInterDue()) return;
+  e.stopPropagation(); e.preventDefault();
+  ecoAd('interstitial',function(){ eco.lastAd=Date.now(); eco.interAt=eco.clears; ecoSave(); ecoPass=true; b.click(); });
+},true);
+/* death: endless pays 1 coin per 10 m (max 60 a run); offer continue for deaths a continue can fix */
+function ecoDeadHook(reason,m){
+  var can=(reason==='Caught'||reason==='Fell'||reason==='Hit by rockfall'||reason==='Swept away'), add, cost, cAd=$e('cAd'), cCoin=$e('cCoin');
+  if(!LV){
+    add=Math.min(60,Math.floor(m/10))-ecoRun.earned;
+    if(add>0){ eco.coins+=add; ecoRun.earned+=add; ecoSave(); }
+    $e('dC').innerHTML='Coins <b>+'+ecoRun.earned+'</b> / total '+eco.coins;
+  }else $e('dC').innerHTML='Coins <b>'+eco.coins+'</b>';
+  cAd.hidden=!(can&&!ecoRun.ad); cCoin.hidden=true;
+  if(can&&ecoRun.ad&&(!LV||lv>=ECO_CONT_FROM)&&ecoRun.paidN<ECO_CONT.length){
+    cost=ECO_CONT[ecoRun.paidN]; cCoin.hidden=false;
+    cCoin.textContent=eco.coins>=cost?('Continue: '+cost+' coins'):('Rescue pack USD 0.99: +'+ECO_RESCUE+' coins and continue');
+  }
+  ecoRefresh();
+}
+/* put the ibex back on the last ledge it landed on; the leopard drops to a ledge about two screens below; hazards in flight clear */
+function ecoContinue(){
+  if(st!=='dead') return;
+  var i, k, L, best=null, bd=1e9, d, o, want, keep, used=[];
+  for(i=0;i<ledges.length;i++){ L=ledges[i]; if(!L.alive) continue; d=Math.abs(L.y-g.lastLedgeY)*10+Math.abs(L.x+L.w/2-g.x)*0.01+(L.y>g.lastLedgeY+5?1e5:0); if(d<bd){ bd=d; best=L; } }
+  if(!best) return;
+  d=Math.min(14,best.w/2);
+  g.x=Math.max(best.x+d,Math.min(best.x+best.w-d,g.x)); g.y=best.y; g.prevY=best.y; g.vx=0; g.vy=0; g.ground=best; g.lastLedgeY=best.y; idle=0; aim=null;
+  if(best.type===1&&best.tm>=0) best.tm=Math.max(best.tm,1.0);
+  for(k=0;k<leops.length;k++){
+    o=leops[k]; if(o.st==='off') continue;
+    want=g.lastLedgeY+420+k*170; keep=null; bd=1e9;
+    for(i=0;i<ledges.length;i++){ L=ledges[i]; if(!L.alive||L===best||used.indexOf(L)>=0||L.y<g.lastLedgeY+260||L.y>g.lastLedgeY+760) continue; d=Math.abs(L.y-want); if(d<bd){ bd=d; keep=L; } }
+    if(!keep) for(i=0;i<ledges.length;i++){ L=ledges[i]; if(!L.alive||L===best||used.indexOf(L)>=0||L.y<g.lastLedgeY+150) continue; d=Math.abs(L.y-want); if(d<bd){ bd=d; keep=L; } }
+    if(!keep) continue;
+    used.push(keep);
+    o.ledge=keep; o.x=keep.x+keep.w*0.5; o.y=keep.y; o.py=o.y; o.vx=0; o.vy=0; o.pvx=0; o.pvy=0; o.st='idle'; o.rec=0.5; o.t=2; o.pounce=false; o.stuck=0; o.skip=null; o.tl=null; o.sq=0; o.sl=0;
+  }
+  rocks=[]; avas=[]; if(typeof avaT==='number') avaT=Math.max(avaT,2.5);
+  showOnly(null); st='play';
+  buzz([20,30,20]);
+}
+$e('cAd').addEventListener('click',function(){
+  if(st!=='dead'||ecoRun.ad) return;
+  ecoAd('rewarded',function(ok){ if(!ok||st!=='dead') return; ecoRun.ad=true; ecoContinue(); });
+});
+$e('cCoin').addEventListener('click',function(){
+  if(st!=='dead') return;
+  var cost=ECO_CONT[ecoRun.paidN];
+  if(eco.coins>=cost){ eco.coins-=cost; ecoRun.paidN++; ecoSave(); ecoRefresh(); ecoContinue(); return; }
+  ecoBuy('rescue',function(ok){ if(!ok) return; eco.coins-=cost; ecoRun.paidN++; ecoSave(); ecoRefresh(); ecoContinue(); });
+});
+function econReset(){ ecoReset(); }
+function econWin(n){ ecoWinHook(n); }
+function econDead(r,m){ ecoDeadHook(r,m); }
+function econRefresh(){ ecoRefresh(); }
+ecoRefresh();
 requestAnimationFrame(frame);
 })();
 </script>
