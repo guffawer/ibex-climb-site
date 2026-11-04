@@ -61,7 +61,7 @@ button.alt{background:rgba(238,243,247,.14);color:var(--snow)}
 .kicker{font-family:var(--font-data);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ice)}
 .panel .stars{font-family:var(--font-display);font-size:44px;line-height:1;color:var(--glow);letter-spacing:.12em}
 /* economy */
-.coinbar{display:flex;align-items:center;gap:12px;width:100%;font-family:var(--font-display);font-size:24px;letter-spacing:.06em;text-transform:uppercase}
+.coinbar{position:sticky;top:calc(-1 * max(70px,11vh));z-index:5;background:var(--ink);padding:8px 0;display:flex;align-items:center;gap:12px;width:100%;font-family:var(--font-display);font-size:24px;letter-spacing:.06em;text-transform:uppercase}
 .coinbar b{color:var(--glow)}
 button.sm{min-height:36px;padding:6px 14px;font-size:16px}
 .eco{display:flex;flex-direction:column;gap:10px;align-items:flex-start}
@@ -79,7 +79,7 @@ button.sm{min-height:36px;padding:6px 14px;font-size:16px}
   <div id="title" class="panel">
     <h1>Ibex<br><em>Climb</em></h1>
     <p>Press anywhere and pull back, like a slingshot. Release to leap. Ledges crumble, ice slides, wind pushes. A snow leopard is climbing after you.</p>
-    <button id="go" type="button">Start climbing</button>
+    <div class="row"><button id="go" type="button">Start climbing</button><button id="shopT" type="button" class="alt">Shop</button></div>
   </div>
   <div id="dead" class="panel" hidden>
     <div class="kicker" id="dK">Endless climb</div>
@@ -92,8 +92,8 @@ button.sm{min-height:36px;padding:6px 14px;font-size:16px}
   <div id="levels" class="panel" hidden>
     <div class="kicker">The Snow Face</div>
     <h1>Choose <em>level</em></h1>
-    <div id="lgrid" class="lgrid"></div>
     <div class="coinbar"><span id="coinsL">Coins <b>0</b></span><button id="shopB" type="button" class="alt sm">Shop</button></div>
+    <div id="lgrid" class="lgrid"></div>
     <div class="row"><button id="endless" type="button" class="alt">Endless climb</button><button id="unl" type="button" class="alt">Test: unlock all</button></div>
   </div>
   <div id="intro" class="panel" hidden>
@@ -1755,14 +1755,14 @@ function mockAd(rewarded,done){
   var left=rewarded?5:3, t, b=$e('adB'), c=$e('adC');
   $e('adK').textContent=rewarded?'Rewarded ad (test)':'Ad (test)';
   $e('adH').textContent=rewarded?'Watch to earn':'Sponsored';
-  ovOpen(adP); b.textContent=rewarded?'Skip (no reward)':'Wait'; b.disabled=!rewarded;
+  ovOpen(adP); b.textContent=rewarded?'Skip (no reward)':'Wait'; b.disabled=!rewarded; b.className='alt';
   c.innerHTML='<b>'+left+'</b> s';
   function finish(ok){ clearInterval(t); b.onclick=null; ovClose(adP); done(ok); }
   t=setInterval(function(){
     left--;
     if(left>0){ c.innerHTML='<b>'+left+'</b> s'; return; }
     clearInterval(t); c.innerHTML='Done';
-    b.disabled=false; b.textContent=rewarded?'Claim reward':'Close'; b.onclick=function(){ finish(rewarded); };
+    b.disabled=false; b.className=''; b.textContent=rewarded?'Claim reward':'Close'; b.onclick=function(){ finish(rewarded); };
   },1000);
   if(rewarded) b.onclick=function(){ finish(false); };
 }
@@ -1794,6 +1794,7 @@ $e('shopList').addEventListener('click',function(e){
   ecoBuy(b.getAttribute('data-sku'),function(){ ecoShop(); });
 });
 $e('shopB').addEventListener('click',function(){ ecoShop(); ovOpen(shopP); });
+$e('shopT').addEventListener('click',function(){ ecoShop(); ovOpen(shopP); });
 $e('shopX').addEventListener('click',function(){ ovClose(shopP); ecoRefresh(); });
 function ecoReset(){ ecoRun={ad:false,paidN:0,earned:0}; }
 /* clear: coins by stars (levels 31-60 pay 1.5x), replay pays only the gain; optional rewarded ad doubles it */
