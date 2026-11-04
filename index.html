@@ -48,8 +48,9 @@ button:focus-visible{outline:3px solid var(--ice);outline-offset:3px}
 #mute{position:absolute;right:0;top:calc(10px + env(safe-area-inset-top,0px));min-height:36px;padding:6px 12px;font-size:14px;background:rgba(238,243,247,.14);color:var(--snow)}
 
 #levels,#intro,#win{justify-content:flex-start;padding-top:max(70px,11vh)}
+#levels{overflow-y:auto;padding-bottom:max(24px,env(safe-area-inset-bottom,0px))}
 .lgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;width:100%}
-.lb{min-height:66px;padding:6px 0;font-size:28px;letter-spacing:.02em;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;line-height:1}
+.lb{min-height:56px;padding:6px 0;font-size:28px;letter-spacing:.02em;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;line-height:1}
 .lb small{font-family:var(--font-data);font-size:10px;letter-spacing:.08em;font-weight:500;color:var(--ink)}
 .lb[disabled]{background:rgba(238,243,247,.1);color:rgba(238,243,247,.35);cursor:default}
 .lb[disabled] small{color:rgba(238,243,247,.35)}
@@ -301,6 +302,8 @@ function sDeath(reason){
     if(reason==='Caught'){
       voice(0,{dur:0.5,f0:150,f1:60,p0:34,p1:18,vol:0.42,atk:0.01,rise:false,breath:0.75,fm0:1.3,fm1:0.85});
       sThud(0.2,78);
+    }else if(reason==='Hit by rockfall'){
+      sThud(0.26,68); nz(0.03,0.5,'lowpass',220,80,0.7,0.12,0.02);
     }else{
       nz(0,0.9,'bandpass',1400,200,0.9,0.22,0.05); /* the long fall */
       body(0.5,90,40,0.6,0.1);
@@ -317,12 +320,14 @@ function ping(at,f,vol){
   }
   nz(at,0.04,'bandpass',f*2.4,f*2,3,vol*0.5,0.002);
 }
+/* gravel trickling down the face before a stone drops */
+function sTrickle(){ if(!sfxOK()) return; try{ var k; for(k=0;k<5;k++) nz(k*0.07,0.05,'bandpass',1500+k*260,900,1.4,0.05,0.003); nz(0,0.4,'lowpass',260,120,0.7,0.04,0.03); }catch(e){} }
 function sPick(){ if(!sfxOK()) return; try{ ping(0,1175,0.06); ping(0.07,1568,0.05); }catch(e){} }
 function sWin(){ if(!sfxOK()) return; try{ ping(0,659,0.07); ping(0.14,880,0.07); ping(0.28,1175,0.08); ping(0.28,587,0.05); nz(0,0.8,'bandpass',600,1500,0.8,0.05,0.25); }catch(e){} }
 /*AUDIO-END*/
 
 
-/* ---------- levels: the Snow Face, 10 steps ----------
+/* ---------- levels: the Snow Face, 30 steps (1-10 locked after playtest) ----------
    Terrain t: gapMin + random * gapAdd = vertical gap (px, 8 px = 1 m); w = ledge width; jit = sideways jump between ledges;
    hz0 = altitude (m) where crumbling (pc) and icy (pi) ledges start; wind = peak wind. A pair [a,b] ramps across the climb.
    Leopard leo: on, pace (1 = the endless-mode pace). par = [seconds for 2 stars, seconds for 3 stars]. Layouts are seeded, so a retry is the same cliff. */
@@ -347,9 +352,54 @@ var LEVELS=[
  {name:'Storm Ridge',tip:'Strong gusts and slippery ledges all the way up.',type:'summit',goalM:160,
   t:{gapMin:70,gapAdd:42,w:100,wMin:70,jit:165,hz0:8,pc:[0.14,0.24],pi:[0.16,0.26],wind:130},leo:{on:true,pace:1.45,n:2},par:[48,36]},
  {name:'Snow Leopard',tip:'The summit is two hundred metres up. It will not stop hunting you.',type:'summit',goalM:200,
-  t:{gapMin:74,gapAdd:46,w:90,wMin:60,jit:175,hz0:6,pc:[0.12,0.22],pi:[0.14,0.24],wind:130},leo:{on:true,pace:2.5,n:2},par:[50,36]}
+  t:{gapMin:74,gapAdd:46,w:90,wMin:60,jit:175,hz0:6,pc:[0.12,0.22],pi:[0.14,0.24],wind:130},leo:{on:true,pace:2.5,n:2},par:[50,36]},
+ /* ---------- levels 11-30: the upper Snow Face ----------
+    New fields: t.ps (share of plain ledges that slide), t.sv (slide speed px/s), t.sr (slide range px), t.side (share of ledges with a side spur);
+    scatter:true puts the flowers on side spurs; leaps:N = summit in N leaps or fewer; type:'lure' = make the leopard fall through cracked or icy ledges n times;
+    rock:{m0,rate,aim,warn,first} = rockfall (stones per second, share aimed near the ibex, warning seconds, seconds before the first);
+    leo.keep = ledges are not pruned under a lagging leopard (open-ended goals). */
+ {name:'Shifting Shelf',tip:'Some ledges slide from side to side. Aim for where the ledge will be, and ride it while you line up.',type:'summit',goalM:100,
+  t:{gapMin:68,gapAdd:40,w:110,wMin:78,jit:150,hz0:6,pc:0.08,pi:0.08,wind:50,ps:0.5,sv:30,sr:70},leo:{on:true,pace:1.3,n:2},par:[30,21]},
+ {name:'Moving Rock',tip:'More ledges slide, and faster. The leopard has to time them too.',type:'summit',goalM:120,
+  t:{gapMin:70,gapAdd:40,w:106,wMin:74,jit:155,hz0:6,pc:0.12,pi:0.12,wind:60,ps:[0.45,0.65],sv:45,sr:90},leo:{on:true,pace:0.9,n:2},par:[41,28]},
+ {name:'Hidden Bloom',tip:'The flowers grow on side ledges, off the straight line up. Detour for each one; the last grows on the summit.',type:'flowers',n:6,goalM:150,scatter:true,
+  t:{gapMin:70,gapAdd:40,w:106,wMin:74,jit:150,hz0:6,pc:0.12,pi:0.12,wind:60,side:0.9},leo:{on:true,pace:1.05,n:2},par:[47,31]},
+ {name:'Sure Feet',tip:'Reach the summit in 9 leaps or fewer. Big, clean leaps that skip a ledge save the count.',type:'summit',goalM:110,leaps:9,
+  t:{gapMin:70,gapAdd:40,w:108,wMin:76,jit:150,hz0:8,pc:0.12,pi:0.1,wind:50},leo:{on:true,pace:0.9,n:3},par:[27,13]},
+ {name:'Sunlit Ledge',tip:'Wide ledges and a calm sky. Catch your breath.',type:'summit',goalM:90,
+  t:{gapMin:66,gapAdd:34,w:124,wMin:88,jit:130,hz0:10,pc:0.06,pi:0.06,wind:30},leo:{on:true,pace:0.9,n:3},par:[31,21]},
+ {name:'Stonefall',tip:'Loose stones fall from above. An amber mark and a trickle of grit show where. Move out from under it.',type:'summit',goalM:110,
+  t:{gapMin:68,gapAdd:38,w:110,wMin:78,jit:150,hz0:10,pc:0.1,pi:0.1,wind:40},rock:{m0:8,rate:0.35,aim:0.5,warn:1.0,first:3},leo:{on:true,pace:0.9,n:3},par:[33,23]},
+ {name:'The Gully',tip:'Stonefall and loose rock all the way up the gully.',type:'summit',goalM:140,
+  t:{gapMin:70,gapAdd:40,w:104,wMin:72,jit:160,hz0:6,pc:[0.18,0.28],pi:0.1,wind:60},rock:{m0:6,rate:[0.28,0.38],aim:0.6,warn:0.9,first:2},leo:{on:true,pace:1.9,n:2},par:[38,25]},
+ {name:'The Lure',tip:'Lead the leopard onto cracked or icy ledges. Make it fall 3 times.',type:'lure',n:3,goalM:0,
+  t:{gapMin:70,gapAdd:40,w:108,wMin:76,jit:150,hz0:4,pc:[0.12,0.28],pi:0.04,wind:50},leo:{on:true,pace:1.8,n:2,keep:true},par:[31,24]},
+ {name:'Counter-Strike II',tip:'Make the leopard miss 5 times. Sliding ledges make its pounce harder to read.',type:'dodge',n:5,goalM:0,
+  t:{gapMin:70,gapAdd:40,w:108,wMin:76,jit:150,hz0:6,pc:0.1,pi:0.1,wind:60,ps:0.4,sv:40,sr:80},leo:{on:true,pace:1.9,n:2,keep:true},par:[63,44]},
+ {name:"Eagle's Gate",tip:'Two hundred and forty metres. Sliding ledges, stonefall, ice and gusts, and the leopard at full speed.',type:'summit',goalM:240,
+  t:{gapMin:74,gapAdd:46,w:84,wMin:54,jit:175,hz0:6,pc:[0.12,0.22],pi:[0.14,0.24],wind:130,ps:0.3,sv:45,sr:80},rock:{m0:20,rate:[0.45,0.6],aim:0.6,warn:0.9,first:4},leo:{on:true,pace:2.7,n:2},par:[49,34]},
+ {name:'Meadow Shelf',tip:'Broad ledges and five flowers. A quiet stretch after the gate.',type:'flowers',n:5,goalM:120,
+  t:{gapMin:66,gapAdd:36,w:124,wMin:88,jit:130,hz0:10,pc:0.06,pi:0.06,wind:30},leo:{on:true,pace:1.0,n:3},par:[27,18]},
+ {name:'Few Leaps',tip:'Reach the summit in 10 leaps or fewer, on sliding ledges.',type:'summit',goalM:140,leaps:10,
+  t:{gapMin:70,gapAdd:40,w:106,wMin:74,jit:155,hz0:6,pc:0.12,pi:0.12,wind:70,ps:0.4,sv:45,sr:80},leo:{on:true,pace:1.5,n:2},par:[34,15]},
+ {name:'Rock and Ice',tip:'Stonefall over black ice. Leap early and keep out from under the marks.',type:'summit',goalM:160,
+  t:{gapMin:70,gapAdd:42,w:102,wMin:70,jit:160,hz0:6,pc:0.1,pi:[0.25,0.4],wind:90},rock:{m0:6,rate:[0.3,0.42],aim:0.6,warn:0.9,first:2},leo:{on:true,pace:2.4,n:2},par:[38,25]},
+ {name:'Double Lure',tip:'Make the leopard fall 4 times, with stones coming down.',type:'lure',n:4,goalM:0,
+  t:{gapMin:70,gapAdd:40,w:106,wMin:74,jit:150,hz0:4,pc:0.25,pi:0.06,wind:60},rock:{m0:4,rate:0.2,aim:0.5,warn:1.0,first:4},leo:{on:true,pace:2.0,n:2,keep:true},par:[64,44]},
+ {name:'Quiet Col',tip:'A gentle saddle between the hard climbs.',type:'summit',goalM:110,
+  t:{gapMin:66,gapAdd:36,w:120,wMin:86,jit:135,hz0:10,pc:0.08,pi:0.08,wind:40},leo:{on:true,pace:0.9,n:3},par:[34,23]},
+ {name:'Gale Traverse',tip:'Seven flowers on side ledges, sliding rock and the strongest gusts yet.',type:'flowers',n:7,goalM:170,scatter:true,
+  t:{gapMin:70,gapAdd:40,w:104,wMin:72,jit:155,hz0:6,pc:0.12,pi:0.12,wind:140,ps:0.35,sv:45,sr:80,side:0.9},leo:{on:true,pace:2.4,n:2},par:[40,26]},
+ {name:'Counter-Strike III',tip:'Make the leopard miss 6 times while stones fall.',type:'dodge',n:6,goalM:0,
+  t:{gapMin:70,gapAdd:40,w:106,wMin:74,jit:150,hz0:6,pc:0.1,pi:0.1,wind:60},rock:{m0:4,rate:0.1,aim:0.5,warn:1.0,first:4},leo:{on:true,pace:2.8,n:2,keep:true},par:[47,33]},
+ {name:'Thin Air',tip:'Narrow ledges, and the summit in 10 leaps or fewer.',type:'summit',goalM:180,leaps:10,
+  t:{gapMin:72,gapAdd:44,w:80,wMin:52,jit:170,hz0:6,pc:[0.18,0.26],pi:[0.18,0.26],wind:110},leo:{on:true,pace:2.7,n:2},par:[24,16]},
+ {name:'Final Approach',tip:'Every hazard on the face, and the leopard close behind.',type:'summit',goalM:220,
+  t:{gapMin:74,gapAdd:46,w:86,wMin:56,jit:175,hz0:6,pc:[0.12,0.22],pi:[0.14,0.24],wind:130,ps:0.3,sv:45,sr:80},rock:{m0:10,rate:[0.4,0.55],aim:0.6,warn:0.9,first:4},leo:{on:true,pace:3.2,n:2},par:[46,34]},
+ {name:'Snow Face Summit',tip:'Two hundred and eighty metres to the top of the Snow Face. The leopard is at its fastest.',type:'summit',goalM:280,
+  t:{gapMin:74,gapAdd:46,w:84,wMin:54,jit:175,hz0:6,pc:[0.12,0.22],pi:[0.14,0.26],wind:140,ps:0.3,sv:50,sr:80},rock:{m0:10,rate:[0.4,0.6],aim:0.6,warn:0.9,first:4},leo:{on:true,pace:3.2,n:2},par:[56,39]}
 ];
-var lv=null, LV=null, lr=Math.random, flowers=[], got=0, dodges=0, lvT=0, sumY=0, summitL=null, leopOn=true, leoPace=1;
+var lv=null, LV=null, lr=Math.random, flowers=[], got=0, dodges=0, leaps=0, lures=0, rocks=[], rockT=0, lvT=0, sumY=0, summitL=null, leopOn=true, leoPace=1;
 var prog={s:[]}, unlockAll=false, winStars=0;
 try{ var pj=JSON.parse(localStorage.getItem('ibexLv')||'null'); if(pj&&pj.s) prog=pj; }catch(e){}
 try{ if(location.hash==='#unlock') unlockAll=true; }catch(e){}
@@ -361,12 +411,15 @@ function starTxt(n){ return '★★★'.slice(0,n)+'☆☆☆'.slice(0,3-n); }
 function objText(L){
   if(L.type==='flowers') return 'Gather '+L.n+' flowers';
   if(L.type==='dodge') return 'Make the leopard miss '+L.n+' times';
-  return 'Reach '+L.goalM+' m'+(L.time?' in '+L.time+' s':'');
+  if(L.type==='lure') return 'Make the leopard fall '+L.n+' times';
+  return 'Reach '+L.goalM+' m'+(L.leaps?' in '+L.leaps+' leaps':'')+(L.time?' in '+L.time+' s':'');
 }
 function hudObj(){
   if(!LV) return 'BEST '+Math.max(bestSaved,Math.floor(g.m));
   if(LV.type==='flowers') return 'FLOWERS '+got+' / '+LV.n;
   if(LV.type==='dodge') return 'MISSES '+dodges+' / '+LV.n;
+  if(LV.type==='lure') return 'FALLS '+lures+' / '+LV.n;
+  if(LV.leaps) return LV.goalM+' M / '+Math.max(0,LV.leaps-leaps)+' LEAPS';
   return 'GOAL '+LV.goalM+' M';
 }
 function fmtT(t){ t=Math.max(0,t); var m=Math.floor(t/60), s=Math.floor(t%60); return m+':'+(s<10?'0':'')+s; }
@@ -387,7 +440,42 @@ function addLedgeLv(){
   lastX=cx;
   r=lr(); pc=tv(T.pc,p); pi=tv(T.pi,p);
   if(m>T.hz0){ if(r<pc) type=1; else if(r<pc+pi) type=2; }
-  ledges.push({x:cx-w/2,y:genY,w:w,type:type,tm:-1,dir:lr()<0.5?-1:1,alive:true,seed:lr()*100});
+  var NL={x:cx-w/2,y:genY,w:w,type:type,tm:-1,dir:lr()<0.5?-1:1,alive:true,seed:lr()*100};
+  ledges.push(NL);
+  if(T.ps&&type===0&&m>T.hz0&&lr()<tv(T.ps,p)) slideLedge(NL,T);
+  if(T.side&&m>T.hz0&&!(LV.goalM&&genY<-LV.goalM*8+120)&&lr()<tv(T.side,p)) addSide(NL,T,p);
+}
+/* sliding ledge: drifts between a and b at mv px/s and carries whoever stands on it */
+function slideLedge(L,T){
+  var r=T.sr||70, a=Math.max(10,L.x-r*0.5), b=Math.min(W-10-L.w,a+r);
+  if(b-a<24) return;
+  L.a=a; L.b=b; L.mv=(lr()<0.5?-1:1)*(T.sv||40)*(0.8+lr()*0.4);
+}
+/* where a sliding ledge's left edge will be after t seconds (same bounce as moveLedges) */
+function posAt(L,t){
+  if(!L.mv) return L.x;
+  var d=L.b-L.a, u=L.mv>0?L.x-L.a:2*d-(L.x-L.a);
+  u=(u+Math.abs(L.mv)*t)%(2*d);
+  return u<=d?L.a+u:L.a+2*d-u;
+}
+function moveLedges(dt){
+  var i, L, ox, d;
+  for(i=0;i<ledges.length;i++){
+    L=ledges[i]; if(!L.mv||!L.alive) continue;
+    ox=L.x; L.x+=L.mv*dt;
+    if(L.x<L.a){ L.x=2*L.a-L.x; L.mv=-L.mv; } else if(L.x>L.b){ L.x=2*L.b-L.x; L.mv=-L.mv; }
+    d=L.x-ox;
+    if(g.ground===L) g.x+=d;
+    if(leopOn&&leop.ledge===L&&leop.st!=='leap'&&leop.st!=='fall') leop.x+=d;
+  }
+}
+/* side ledge: a spur at about the same height on the far side, off the direct line (holds scattered flowers) */
+function addSide(L,T,p){
+  var w2=Math.max(T.wMin,tv(T.w,p))*(0.75+lr()*0.2), c=L.x+L.w/2, dir=c<W/2?1:-1;
+  var c2=c+dir*(L.w/2+w2/2+36+lr()*70);
+  c2=clamp(c2,w2/2+12,W-w2/2-12);
+  if(Math.abs(c2-c)<(L.w+w2)/2+26) return;
+  ledges.push({x:c2-w2/2,y:L.y-8-lr()*18,w:w2,type:0,tm:-1,dir:1,alive:true,seed:lr()*100,side:true});
 }
 function addLedge(){
   if(LV) return addLedgeLv();
@@ -401,7 +489,7 @@ function addLedge(){
   ledges.push({x:cx-w/2,y:genY,w:w,type:type,tm:-1,dir:Math.random()<0.5?-1:1,alive:true,seed:Math.random()*100});
 }
 function reset(){
-  LV=(lv===null)?null:LEVELS[lv]; lr=LV?mrng(1000+lv*7919):Math.random; summitL=null; sumY=0; flowers=[]; got=0; dodges=0; lvT=0;
+  LV=(lv===null)?null:LEVELS[lv]; lr=LV?mrng(1000+lv*7919):Math.random; summitL=null; sumY=0; flowers=[]; got=0; dodges=0; leaps=0; lures=0; rocks=[]; rockT=LV&&LV.rock?(LV.rock.first||2):0; lvT=0;
   leopOn=!LV||LV.leo.on; leoPace=LV?LV.leo.pace:1;
   /* ledges below the start screen so the leopard climbs into view; the start ledge is full width, so the ibex can never reach them */
   ledges=[]; var bj, bw, base=null, low=null, bn=(LV&&LV.leo.n)?LV.leo.n:LEO.BASE_N;
@@ -428,7 +516,7 @@ function placeFlowers(){
     best=null; bd=1e9; ty=-LV.goalM*8*k/LV.n;
     if(k===LV.n) best=summitL;
     else for(i=0;i<ledges.length;i++){
-      L=ledges[i]; if(L.y>-60||L.summit||L.used||L.type!==0) continue;
+      L=ledges[i]; if(L.y>-60||L.summit||L.used||L.type!==0||(LV.scatter&&!L.side)) continue;
       d=Math.abs(L.y-ty); if(d<bd){ bd=d; best=L; }
     }
     if(!best) continue;
@@ -447,7 +535,7 @@ function die(reason){
   }else{
     document.getElementById('dK').textContent='Level '+(lv+1)+' / '+LV.name;
     s1.innerHTML=LV.goalM?('Altitude <b>'+m+'</b> of '+LV.goalM+' m'):('Altitude <b>'+m+'</b> m');
-    s2.innerHTML=LV.type==='flowers'?('Flowers <b>'+got+'</b> of '+LV.n):LV.type==='dodge'?('Misses <b>'+dodges+'</b> of '+LV.n):('Time <b>'+fmtT(lvT)+'</b>');
+    s2.innerHTML=LV.type==='flowers'?('Flowers <b>'+got+'</b> of '+LV.n):LV.type==='dodge'?('Misses <b>'+dodges+'</b> of '+LV.n):LV.type==='lure'?('Leopard falls <b>'+lures+'</b> of '+LV.n):LV.leaps?('Leaps <b>'+leaps+'</b> of '+LV.leaps):('Time <b>'+fmtT(lvT)+'</b>');
   }
   deadP.hidden=false;
   buzz([30,40,70]);
@@ -466,7 +554,7 @@ function win(){
   if(n>(prog.s[lv]||0)) prog.s[lv]=n;
   saveProg();
   document.getElementById('wK').textContent='Level '+(lv+1)+' cleared / '+LV.name;
-  document.getElementById('wH').textContent=LV.type==='flowers'?'Gathered':LV.type==='dodge'?'Outplayed':'Summit';
+  document.getElementById('wH').textContent=LV.type==='flowers'?'Gathered':LV.type==='dodge'?'Outplayed':LV.type==='lure'?'Outwitted':'Summit';
   document.getElementById('wS').textContent=starTxt(n);
   document.getElementById('wT').textContent=t.toFixed(1);
   document.getElementById('wP').textContent=n>=3?'Perfect run.':(n===2?'Three stars: under '+LV.par[1]+' s.':'Two stars: under '+LV.par[0]+' s.');
@@ -496,14 +584,19 @@ function land(L){
   buzz(L.type===1?25:12);
   if(LV&&flowers.length){ for(var fi=0;fi<flowers.length;fi++){ if(!flowers[fi].got&&flowers[fi].L===L) pickFlower(flowers[fi]); } }
   if(LV&&L.summit&&LV.type==='summit') win();
+  if(LV&&LV.leaps&&st==='play'&&leaps>=LV.leaps) die('Out of leaps');
 }
 function fire(){
   if(!aim||!g.ground) return;
   var dx=(aim.sx-aim.cx)/S, dy=(aim.sy-aim.cy)/S, len=Math.hypot(dx,dy);
   if(len<10) return;
   var l=Math.min(len,PULL), v=l/PULL*MAXV;
-  g.vx=dx/len*v; g.vy=dy/len*v; g.ground=null; g.prevY=g.y;
+  jump(dx/len*v,dy/len*v);
+}
+function jump(vx,vy){
+  g.vx=vx; g.vy=vy; g.ground=null; g.prevY=g.y;
   if(Math.abs(g.vx)>8) g.face=g.vx>0?1:-1;
+  leaps++;
   sLeap();
 }
 
@@ -600,6 +693,7 @@ function leoLaunch(){
   var o=leop, L=o.tl;
   if(!L||!L.alive){ o.st='idle'; o.pounce=false; o.rec=0; o.t=0.3; return; }
   var h=o.y-L.y, T=leoFlight(h,o.pounce?LEO.POUNCE_MARGIN:LEO.HOP_MARGIN), cap=o.pounce?LEO.VX_POUNCE:LEO.VX_HOP;
+  if(L.mv) o.tx+=posAt(L,T)-L.x;
   o.vx=clamp((o.tx-o.x)/T,-cap,cap); o.vy=o.pvy;
   o.py=o.y; o.ledge=null; o.sl=0; o.st='leap'; o.minD=1e9;
   if(Math.abs(o.vx)>8) o.face=o.vx>0?1:-1;
@@ -636,7 +730,7 @@ function leoGround(dt){
   if(L.type===2){
     var dv=o.sl+L.dir*LEO.ICE_DRIFT;
     o.x+=dv*dt; o.sl*=Math.max(0,1-LEO.ICE_FRIC*dt);
-    if(o.x<L.x-2||o.x>L.x+L.w+2){ leoFall(dv); return true; }
+    if(o.x<L.x-2||o.x>L.x+L.w+2){ leoFall(dv); lureHit(); return true; }
   }
   if(L.type===1&&L.tm>=0&&g.ground!==L){
     L.tm-=dt;
@@ -644,10 +738,22 @@ function leoGround(dt){
       breakLedge(L,o.x);
       for(k=0;k<12;k++) debris.push({x:rnd(L.x,L.x+L.w),y:L.y,vx:rnd(-40,40),vy:rnd(-40,60),life:1,c:'#5a6877',s:3});
       if(o.y-g.y<LEO.HEAR) sCrumble(0.1);
-      leoFall(0); return true;
+      leoFall(0); lureHit(); return true;
     }
   }
   return false;
+}
+function lureHit(){
+  if(!LV||LV.type!=='lure'||st!=='play') return;
+  lures++; sPick(); buzz(16);
+  if(lures>=LV.n) win();
+}
+/* open-ended levels only (leo.keep): a leopard stranded with no reachable ledge for 3 s re-enters on a ledge below the view */
+function leoReenter(){
+  var o=leop, i, L, best=null, bd=1e9, d, want=g.lastLedgeY+420;
+  for(i=0;i<ledges.length;i++){ L=ledges[i]; if(!L.alive||L.y<g.lastLedgeY+260||L.y>g.lastLedgeY+700) continue; d=Math.abs(L.y-want); if(d<bd){ bd=d; best=L; } }
+  if(!best) return;
+  o.ledge=best; o.x=best.x+best.w*0.5; o.y=best.y; o.py=o.y; o.vx=0; o.vy=0; o.st='idle'; o.rec=0.5; o.t=1; o.pounce=false; o.stuck=0; o.skip=null;
 }
 function updLeo(dt){
   var o=leop, L, i, landed=null, a, b;
@@ -682,8 +788,8 @@ function updLeo(dt){
           if(leoPickHop(LEO.RISE_MAX)||leoPickHop(LEO.RISE_MAX2)){
             L=o.tl;
             o.pounce=(L===g.ground)||(Math.abs(L.y-g.y)<40&&Math.abs(o.tx-g.x)<90);
-            leoCrouch();
-          }else o.t=0.3;
+            o.stuck=0; leoCrouch();
+          }else{ o.t=0.3; o.stuck=(o.stuck||0)+0.3; if(LV&&LV.leo.keep&&o.stuck>3) leoReenter(); }
         }
       }
     }else{ /* stumble */
@@ -697,6 +803,30 @@ function updLeo(dt){
   if(o.st!=='stumble'&&sepX<0&&sepY<0){ die('Caught'); return; }
   if(o.st==='leap'&&d<o.minD) o.minD=d;
   if(landed) leoLand(landed);
+}
+
+/* ---------- rockfall: a dust trickle marks the spot at the top of the view, then a stone drops. Lethal to the ibex only ----------
+   LV.rock = { m0: altitude where it starts, rate: stones per second ([a,b] ramps), aim: share dropped near the ibex, warn: s of warning, first: s before the first } */
+var ROCK={G:1300, V0:90, HIT_X:10, HIT_H:24, MARK_Y:92};
+function updRocks(dt){
+  var R=LV.rock, i, r, x, rate;
+  if(g.m>=(R.m0||6)){
+    rockT-=dt;
+    if(rockT<=0){
+      rate=tv(R.rate,clamp(g.m/(LV.goalM||200),0,1));
+      rockT=(0.6+Math.random()*0.8)/rate;
+      x=Math.random()<(R.aim||0.6)?g.x+rnd(-46,46):rnd(26,W-26);
+      rocks.push({x:clamp(x,22,W-22),y:camY-24,vy:0,st:'warn',t:R.warn||0.9,s:7+Math.random()*4,rot:Math.random()*6,seed:Math.random()*50});
+      sTrickle(); buzz(8);
+    }
+  }
+  for(i=rocks.length-1;i>=0;i--){
+    r=rocks[i];
+    if(r.st==='warn'){ r.t-=dt; if(r.t<=0){ r.st='fall'; r.y=camY-24; r.vy=ROCK.V0; } continue; }
+    r.vy+=ROCK.G*dt; r.y+=r.vy*dt; r.rot+=dt*6;
+    if(Math.abs(r.x-g.x)<r.s*0.75+ROCK.HIT_X&&r.y+r.s>g.y-ROCK.HIT_H&&r.y-r.s<g.y){ die('Hit by rockfall'); return; }
+    if(r.y>camY+H+80) rocks.splice(i,1);
+  }
 }
 
 /* ---------- input ---------- */
@@ -756,6 +886,7 @@ function update(dt){
     if(windT<=0){ windT=rnd(2,5); windTarget=(Math.random()*2-1)*(LV?LV.t.wind:Math.min(160,30+m*2)); }
     wind+=(windTarget-wind)*Math.min(1,dt*0.8);
     if(LV){ lvT+=dt; if(LV.time&&lvT>=LV.time){ die('Out of time'); return; } }
+    if(LV&&LV.t.ps) moveLedges(dt);
 
     if(!g.ground){
       g.prevY=g.y;
@@ -796,13 +927,14 @@ function update(dt){
     }
     // snow leopard: leaps up the same ledges; kills only on body contact
     updLeo(dt);
+    if(st==='play'&&LV&&LV.rock) updRocks(dt);
 
     // camera
     var target=g.y-H*0.62;
     camY+=(target-camY)*Math.min(1,dt*4);
     camY=Math.min(camY,-H*0.78);
     while(genY>camY-900) addLedge();
-    while(ledges.length>1&&ledges[0].y>camY+H+1000) ledges.shift();
+    while(ledges.length>1&&ledges[0].y>camY+H+1000&&!(LV&&LV.leo.keep&&ledges[0].y<leop.y+400)) ledges.shift(); /* leo.keep: ledges stay under a lagging leopard so open-ended goals cannot stall */
 
     if(windG&&!muted){
       windG.gain.value=0.03+Math.abs(wind)/160*0.08+Math.min(0.05,g.m/300*0.05);
@@ -1165,6 +1297,29 @@ function drawLvHUD(){
       ctx.textAlign='center'; ctx.font='500 11px "IBM Plex Mono",monospace'; ctx.fillStyle='#f2a65a'; ctx.fillText('FLOWER BELOW',W/2,H-24); break; } }
   }
 }
+/* rockfall: amber chevron and dust grains at the top of the view, then a faceted stone in the ledge palette */
+function drawRocks(){
+  var i, r, k, y, a, gy, n=7, pts;
+  for(i=0;i<rocks.length;i++){
+    r=rocks[i];
+    if(r.st==='warn'){
+      y=camY+ROCK.MARK_Y; a=0.55+0.45*Math.sin(tAll*14);
+      ctx.fillStyle='rgba(242,166,90,'+a+')'; ctx.strokeStyle=INK; ctx.lineWidth=1.2;
+      ctx.beginPath(); ctx.moveTo(r.x-8,y-5); ctx.lineTo(r.x+8,y-5); ctx.lineTo(r.x,y+5); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle='#c9a98a';
+      for(k=0;k<5;k++){ gy=((tAll*160+k*37+r.seed*9)%120); ctx.globalAlpha=clamp(1-gy/120,0,1); ctx.fillRect(r.x-4+hash(k+r.seed)*8,y+8+gy,2,2); }
+      ctx.globalAlpha=1;
+      continue;
+    }
+    if(r.y<camY-30||r.y>camY+H+30) continue;
+    ctx.save(); ctx.translate(r.x,r.y); ctx.rotate(r.rot);
+    ctx.beginPath();
+    for(k=0;k<n;k++){ a=k/n*6.2832; pts=r.s*(0.78+hash(r.seed+k)*0.32); if(k) ctx.lineTo(Math.cos(a)*pts,Math.sin(a)*pts); else ctx.moveTo(Math.cos(a)*pts,Math.sin(a)*pts); }
+    ctx.closePath(); ctx.fillStyle='#5a6877'; ctx.fill(); ctx.strokeStyle=INK; ctx.lineWidth=1.2; ctx.stroke();
+    ctx.fillStyle='#7c8a98'; ctx.beginPath(); ctx.moveTo(-r.s*0.5,-r.s*0.2); ctx.lineTo(0,-r.s*0.7); ctx.lineTo(r.s*0.45,-r.s*0.25); ctx.lineTo(0,r.s*0.05); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+}
 /* summit cairn with a flag, and the flowers */
 function drawLvWorld(){
   var i, f, b, a, x, y;
@@ -1212,6 +1367,7 @@ function render(){
     drawLvWorld();
     if(leopOn) drawLeopard();
     drawGoat();
+    if(LV&&rocks.length) drawRocks();
     drawAim();
   }
   for(var j=0;j<debris.length;j++){ var d=debris[j]; ctx.globalAlpha=clamp(d.life*2,0,1); ctx.fillStyle=d.c; ctx.fillRect(d.x,d.y,d.s,d.s); }
