@@ -69,6 +69,37 @@ button.sm{min-height:36px;padding:6px 14px;font-size:16px}
 #adp{justify-content:center;align-items:center;text-align:center}
 .shopi{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;font-size:19px;padding:10px 16px}
 .shopi small{font-family:var(--font-data);font-size:11px;letter-spacing:.04em;font-weight:500}
+/* thumb reach: the action buttons sit at the bottom of the intro, win and dead panels */
+#intro,#win,#dead{padding-bottom:max(28px,calc(env(safe-area-inset-bottom,0px) + 16px));overflow-y:auto}
+.row.bot,#dead>.row{width:100%}
+.row.bot{margin-top:auto}
+.row.bot button,#dead>.row button{flex:1 1 0;min-width:0;min-height:60px;padding-left:10px;padding-right:10px}
+#iGo{flex:2 1 0}
+#intro .row.bot{position:sticky;bottom:12px;z-index:3;padding-top:12px;background:linear-gradient(0deg,rgba(13,19,27,.94) 72%,rgba(13,19,27,0))}
+}
+#wNext{flex:1 1 100%}
+#dEco{margin-top:auto;width:100%}
+#dEco .row{flex-direction:column;flex-wrap:nowrap;width:100%}
+#dEco .row button{width:100%;min-height:56px}
+/* visual level intro */
+.iv{display:flex;flex-direction:column;gap:16px;width:100%}
+.obj{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.obj svg{width:64px;height:64px;flex:none}
+.obj .x{font-family:var(--font-display);font-weight:700;font-size:46px;line-height:1;color:var(--glow)}
+.hz{display:flex;flex-wrap:wrap;gap:12px 10px}
+.ic{width:74px;display:flex;flex-direction:column;align-items:center;gap:5px;font-family:var(--font-data);font-weight:500;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#c4d0da;text-align:center}
+.ic svg{width:56px;height:56px;background:rgba(238,243,247,.07);border-radius:6px}
+.ic.new{color:var(--glow)}
+.ic.new svg{outline:2px solid var(--glow);outline-offset:1px}
+.how svg{width:100%;max-width:270px;height:auto;display:block}
+@media (max-height:700px){
+  #intro{padding-top:max(52px,8vh);gap:10px}
+  #intro h1{font-size:clamp(36px,11vw,52px)}
+  #intro .stat{font-size:22px}
+  .obj svg{width:48px;height:48px}.obj .x{font-size:38px}
+  .ic{width:62px;font-size:9px}.ic svg{width:44px;height:44px}
+  .iv{gap:10px}.hz{gap:8px 8px}
+  .how svg{max-width:200px}
 #toast{position:absolute;left:8px;right:8px;bottom:20px;padding:10px 12px;background:rgba(238,243,247,.95);color:var(--ink);font-size:12px;border-radius:3px;text-align:center;pointer-events:none;z-index:50}
 #toast[hidden]{display:none}
 </style>
@@ -86,7 +117,7 @@ button.sm{min-height:36px;padding:6px 14px;font-size:16px}
     <h1 id="why">Fell</h1>
     <div class="stat" id="dS1">Altitude <b>0</b> m</div>
     <div class="stat" id="dS2">Best <b>0</b> m</div>
-    <div class="eco" id="dEco"><div class="stat" id="dC"></div><div class="row"><button id="cAd" type="button" hidden>Continue (watch ad)</button><button id="cCoin" type="button" class="alt" hidden>Continue</button></div></div>
+    <div class="eco" id="dEco"><div class="stat" id="dC"></div><div class="row"><button id="cAd" type="button" hidden>Continue (watch ad)</button><button id="cCoin" type="button" hidden>Continue</button><button id="cShop" type="button" class="alt">Shop</button></div></div>
     <div class="row"><button id="again" type="button">Retry</button><button id="dLv" type="button" class="alt">Levels</button></div>
   </div>
   <div id="levels" class="panel" hidden>
@@ -100,8 +131,8 @@ button.sm{min-height:36px;padding:6px 14px;font-size:16px}
     <div class="kicker" id="iK">Level 1</div>
     <h1 id="iN">First Steps</h1>
     <div class="stat" id="iO">Reach 40 m</div>
-    <p id="iT"></p>
-    <div class="row"><button id="iGo" type="button">Climb</button><button id="iBack" type="button" class="alt">Levels</button></div>
+    <div class="iv" id="iV"></div>
+    <div class="row bot"><button id="iGo" type="button">Climb</button><button id="iBack" type="button" class="alt">Levels</button></div>
   </div>
   <div id="win" class="panel" hidden>
     <div class="kicker" id="wK">Level 1 cleared</div>
@@ -111,7 +142,7 @@ button.sm{min-height:36px;padding:6px 14px;font-size:16px}
     <div class="stat" id="wC" hidden></div>
     <div class="row"><button id="wDbl" type="button" hidden>Double (watch ad)</button></div>
     <p id="wP"></p>
-    <div class="row"><button id="wNext" type="button">Next level</button><button id="wAgain" type="button" class="alt">Replay</button><button id="wLv" type="button" class="alt">Levels</button></div>
+    <div class="row bot"><button id="wNext" type="button">Next level</button><button id="wAgain" type="button" class="alt">Replay</button><button id="wLv" type="button" class="alt">Levels</button></div>
   </div>
   <div id="shop" class="panel" hidden>
     <div class="kicker">Shop (test build: no real charges)</div>
@@ -1094,12 +1125,84 @@ function buildLevels(){
 /* with 60 levels the grid is taller than a phone screen: open it scrolled to the next level to play */
 function scrollToCur(){ var c=levelsP.dataset.cur, bs, r; if(c===''||c===undefined) return; bs=document.querySelectorAll('#lgrid .lb'); if(!bs[+c]) return; r=bs[+c].getBoundingClientRect(); if(r.bottom>levelsP.clientHeight-20) levelsP.scrollTop+=r.top-levelsP.clientHeight*0.45; }
 function openLevels(){ buildLevels(); try{ econRefresh(); }catch(e){} toMenu(levelsP); levelsP.scrollTop=0; scrollToCur(); }
+/* ---------- visual level intro: pictograms in the locked palette, derived from the level's own data (no level data is changed) ---------- */
+var PX='#0d131b', PS='#1c2733', PR='#3b4856', PW='#eef3f7', PI='#8fd3e8', PG='#f2a65a', PL='#c9d4de', PT='#d8b98c';
+function svgI(b){ return '<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">'+b+'</svg>'; }
+var P_LEDGE='<path d="M5 33h38l-5 8H10z" fill="'+PR+'"/><path d="M5 33h38v-3.5H5z" fill="'+PW+'"/>';
+var P_LEO='<path d="M8 27c-6-1-7-9-2-12" stroke="'+PL+'" stroke-width="4" fill="none" stroke-linecap="round"/><ellipse cx="23" cy="28" rx="15" ry="7.5" fill="'+PL+'"/><rect x="11" y="32" width="4" height="9" rx="2" fill="'+PL+'"/><rect x="31" y="32" width="4" height="9" rx="2" fill="'+PL+'"/><circle cx="38" cy="21" r="7" fill="'+PL+'"/><path d="M33 16l1-6 5 4zM40 14l3-5 2 6z" fill="'+PL+'"/><circle cx="40.5" cy="20" r="1.6" fill="#d6e86a"/><g fill="'+PR+'"><circle cx="17" cy="26" r="1.8"/><circle cx="23" cy="29" r="1.8"/><circle cx="28" cy="25" r="1.8"/></g>';
+var P_CRUMBLE='<path d="M5 24h38l-5 8H10z" fill="'+PR+'"/><path d="M5 24h38v-3.5H5z" fill="'+PW+'"/><path d="M22 24l-3 4 4 2-3 4" stroke="'+PX+'" stroke-width="1.8" fill="none"/><g fill="'+PR+'"><path d="M16 36h5l-2 6z"/><path d="M30 35h5l-2 7z"/></g>';
+var ICO={
+  summit:P_LEDGE+'<path d="M24 30V9" stroke="'+PW+'" stroke-width="2.2" stroke-linecap="round"/><path d="M24 9l13 5.5L24 20z" fill="'+PG+'"/>',
+  flower:'<g fill="'+PW+'"><circle cx="24" cy="12" r="6"/><circle cx="35" cy="20" r="6"/><circle cx="31" cy="33" r="6"/><circle cx="17" cy="33" r="6"/><circle cx="13" cy="20" r="6"/></g><circle cx="24" cy="24" r="5.5" fill="'+PG+'"/>',
+  kid:'<ellipse cx="22" cy="28" rx="11" ry="6.5" fill="'+PT+'"/><rect x="14" y="31" width="3.5" height="9" rx="1.5" fill="'+PT+'"/><rect x="26" y="31" width="3.5" height="9" rx="1.5" fill="'+PT+'"/><circle cx="34" cy="21" r="5.5" fill="'+PT+'"/><circle cx="35.5" cy="20" r="1.3" fill="'+PX+'"/>',
+  ibex:'<ellipse cx="22" cy="28" rx="11" ry="6.5" fill="'+PT+'"/><rect x="14" y="31" width="3.5" height="9" rx="1.5" fill="'+PT+'"/><rect x="26" y="31" width="3.5" height="9" rx="1.5" fill="'+PT+'"/><circle cx="34" cy="21" r="5.5" fill="'+PT+'"/><circle cx="35.5" cy="20" r="1.3" fill="'+PX+'"/><path d="M31 17c-3-7 0-11 6-11" stroke="#8a6a4f" stroke-width="2.6" fill="none" stroke-linecap="round"/>',
+  leo:P_LEO,
+  leo2:'<g transform="translate(-4 -2) scale(.8)">'+P_LEO+'</g><g transform="translate(14 12) scale(.62)" opacity=".9">'+P_LEO+'</g>',
+  whiff:'<g transform="translate(-3 9) scale(.8)">'+P_LEO+'</g><path d="M30 5l13 13M43 5L30 18" stroke="'+PG+'" stroke-width="3.5" stroke-linecap="round"/>',
+  lure:'<g transform="translate(6 -9) rotate(18 24 24) scale(.62)">'+P_LEO+'</g>'+P_CRUMBLE,
+  wind:'<path d="M6 15h24c5 0 5-7 0-7M6 25h30c5 0 5 7 0 7M6 37h20c4 0 4-6 0-6" stroke="'+PI+'" stroke-width="3" fill="none" stroke-linecap="round"/>',
+  crumble:P_CRUMBLE,
+  ice:'<path d="M5 22h38l-3 7H8z" fill="'+PI+'"/><path d="M5 22h38v-3H5z" fill="#d9f1f9"/><g fill="'+PI+'"><path d="M10 29h3l-1.5 10z"/><path d="M21 29h3.5l-1.8 12z"/><path d="M33 29h3l-1.5 9z"/></g>',
+  slide:'<path d="M5 34h38l-5 8H10z" fill="'+PR+'"/><path d="M5 34h38v-3.5H5z" fill="'+PW+'"/><path d="M12 18h24M12 18l6-5M12 18l6 5M36 18l-6-5M36 18l-6 5" stroke="'+PG+'" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+  cornice:'<path d="M5 34h38l-5 8H10z" fill="'+PR+'"/><path d="M3 34c0-9 9-12 17-10 8-3 17-1 19 10z" fill="'+PW+'"/><path d="M12 30c3-2 7-2 10 0" stroke="'+PI+'" stroke-width="1.6" fill="none"/>',
+  drift:'<g opacity=".5"><path d="M5 34h38l-5 8H10z" fill="'+PR+'"/><path d="M5 34h38v-3.5H5z" fill="'+PW+'"/></g><path d="M4 28h40" stroke="'+PI+'" stroke-width="2" stroke-dasharray="3 5" stroke-linecap="round"/><path d="M24 24v-10M19 18l5-5 5 5" stroke="'+PW+'" stroke-width="2" fill="none" stroke-linecap="round" opacity=".7"/>',
+  up:'<g stroke="'+PI+'" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M14 40V13M9 19l5-6 5 6"/><path d="M26 42V18M21 24l5-6 5 6"/><path d="M38 36V10M33 16l5-6 5 6"/></g>',
+  rock:'<path d="M24 3l8 13H16z" fill="'+PG+'"/><rect x="23" y="7.5" width="2" height="4.5" fill="'+PX+'"/><circle cx="24" cy="14" r="1.1" fill="'+PX+'"/><path d="M14 31l7-7 11 2 5 9-7 9H17l-5-8z" fill="#5a6877"/><path d="M21 24l-2 8 6 2" stroke="'+PX+'" stroke-width="1.4" fill="none" opacity=".6"/>',
+  ava:'<path d="M4 9l40 21v13H4z" fill="'+PW+'"/><path d="M12 15l24 13M8 25l24 14" stroke="'+PI+'" stroke-width="2.6"/><path d="M39 3l6 10H33z" fill="'+PG+'"/>',
+  fog:'<g fill="#c4d0da"><circle cx="16" cy="27" r="8"/><circle cx="27" cy="21" r="10"/><circle cx="36" cy="28" r="7"/><rect x="9" y="27" width="34" height="9" rx="4.5"/></g><path d="M8 41h26M14 45h26" stroke="'+PI+'" stroke-width="2" stroke-linecap="round" opacity=".7"/>'
+};
+function leapIco(n){ return '<circle cx="24" cy="24" r="20" fill="'+PS+'" stroke="'+PG+'" stroke-width="2.5"/><text x="24" y="28" text-anchor="middle" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="26" fill="'+PW+'">'+n+'</text><text x="24" y="39" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-weight="500" font-size="7.5" fill="'+PI+'">LEAPS</text>'; }
+function nzv(v){ return Array.isArray(v)?(v[0]>0||v[1]>0):(v>0); }
+function lvFeats(L){
+  var t=L.t||{}, f=[], w=t.wind;
+  if(L.leo&&L.leo.on) f.push(L.leo2?['leo2','2 leopards']:['leo','Leopard']);
+  if((Array.isArray(w)?Math.max(w[0],w[1]):w)>=40) f.push(['wind','Wind']);
+  if(nzv(t.pc)) f.push(['crumble','Crumbling']);
+  if(nzv(t.pi)) f.push(['ice','Ice']);
+  if(nzv(t.ps)) f.push(['slide','Sliding']);
+  if(nzv(t.sn)) f.push(['cornice','Cornice']);
+  if(nzv(t.pv)) f.push(['drift','Vanishing']);
+  if(L.up) f.push(['up','Updraft']);
+  if(L.rock) f.push(['rock','Rockfall']);
+  if(L.ava) f.push(['ava','Avalanche']);
+  if(L.fog) f.push(['fog','Fog']);
+  return f;
+}
+var FEAT_FIRST=null;
+function featFirst(){ if(FEAT_FIRST) return FEAT_FIRST; FEAT_FIRST={}; for(var i=0;i<LEVELS.length;i++) lvFeats(LEVELS[i]).forEach(function(f){ if(FEAT_FIRST[f[0]]===undefined) FEAT_FIRST[f[0]]=i; }); return FEAT_FIRST; }
+function howToPull(){
+  return '<svg viewBox="0 0 270 120" aria-hidden="true" focusable="false">'+
+    '<path d="M6 92h78l-7 10H13z" fill="'+PR+'"/><path d="M6 92h78v-4H6z" fill="'+PW+'"/>'+
+    '<path d="M186 40h78l-7 10h-64z" fill="'+PR+'"/><path d="M186 40h78v-4h-78z" fill="'+PW+'"/>'+
+    '<g transform="translate(26 54) scale(.66)">'+ICO.ibex+'</g>'+
+    '<path d="M52 80L26 106" stroke="'+PW+'" stroke-width="2" stroke-dasharray="3 4" stroke-linecap="round"/><circle cx="24" cy="108" r="6" fill="none" stroke="'+PW+'" stroke-width="2"/>'+
+    '<path d="M60 74C100 4 160 6 200 34" stroke="'+PG+'" stroke-width="4" fill="none" stroke-dasharray="1 8" stroke-linecap="round"/>'+
+    '<path d="M196 24l12 12-16 3z" fill="'+PG+'"/>'+
+    '<text x="38" y="119" font-family="IBM Plex Mono,monospace" font-size="9" font-weight="500" fill="'+PW+'">PULL BACK</text>'+
+    '<text x="104" y="58" font-family="IBM Plex Mono,monospace" font-size="9" font-weight="500" fill="'+PG+'">LET GO</text></svg>';
+}
+function introVisual(L,i){
+  var h='<div class="obj">', n=L.n, ff=featFirst(), feats=lvFeats(L), k;
+  if(L.type==='flowers') h+=svgI(ICO.flower)+'<span class="x">&times;'+n+'</span>';
+  else if(L.type==='rescue') h+=svgI(ICO.kid)+'<span class="x">&times;'+n+'</span>';
+  else if(L.type==='dodge') h+=svgI(ICO.whiff)+'<span class="x">&times;'+n+'</span>';
+  else if(L.type==='lure') h+=svgI(ICO.lure)+'<span class="x">&times;'+n+'</span>';
+  else{ h+=svgI(ICO.summit); if(L.leaps) h+=svgI(leapIco(L.leaps)); }
+  h+='</div>';
+  if(i<3) h+='<div class="how">'+howToPull()+'</div>';
+  if(feats.length){
+    h+='<div class="hz">';
+    for(k=0;k<feats.length;k++) h+='<div class="ic'+(ff[feats[k][0]]===i?' new':'')+'">'+svgI(ICO[feats[k][0]])+'<span>'+(ff[feats[k][0]]===i?'New: ':'')+feats[k][1]+'</span></div>';
+    h+='</div>';
+  }
+  return h;
+}
 function openIntro(i){
   lv=i; var L=LEVELS[i];
   document.getElementById('iK').textContent='Level '+(i+1)+' of '+LEVELS.length;
   document.getElementById('iN').textContent=L.name;
   document.getElementById('iO').textContent=objText(L);
-  document.getElementById('iT').textContent=L.tip;
+  var iv=document.getElementById('iV'); iv.innerHTML=introVisual(L,i); iv.setAttribute('aria-label',L.tip||'');
   toMenu(introP);
 }
 function startRun(){ initAudio(); showOnly(null); reset(); st='play'; }
@@ -1599,6 +1702,7 @@ function drawHUD(){
   ctx.font='500 11px "IBM Plex Mono",monospace';
   ctx.fillStyle='rgba(238,243,247,0.75)';
   ctx.fillText(hudObj(),12,46);
+  if(typeof eco!=='undefined'&&eco){ ctx.fillStyle='#f2a65a'; ctx.fillText('COINS '+eco.coins,12,62); ctx.fillStyle='rgba(238,243,247,0.75)'; }
   var cxw=W/2, cyw=26;
   ctx.textAlign='center';
   ctx.fillText('WIND',cxw,12);
@@ -1733,7 +1837,11 @@ resize(); reset();
 /* ---------- economy: coins, continue, rewarded and interstitial ads, shop ----------
    Test build: ads and purchases are mocks (window.IbexEcon.ads / .buy are the seams a native build replaces).
    Nothing here touches level data, ledge layout, the leopard or the physics; it uses no random numbers. */
-var ECO_KEY='ibexEco', ECO_CONT=[100,200,400], ECO_CONT_FROM=19, ECO_RESCUE=500;
+var ECO_KEY='ibexEco', ECO_CONT0=100, ECO_CONT_STEP=200, ECO_CONT_FROM=19, ECO_RESCUE=500;
+/* paid continue price: 100, then +200 each time within one attempt (100, 300, 500, 700 ...). No cap: coins you hold are always usable. */
+function ecoCost(n){ return ECO_CONT0+ECO_CONT_STEP*n; }
+/* smallest coin pack that covers a shortfall, so a purchase made to continue always pays for that continue */
+function ecoPackFor(need){ var P=[{sku:'rescue',coins:500,usd:'0.99'},{sku:'c1800',coins:1800,usd:'2.99'},{sku:'c3500',coins:3500,usd:'4.99'},{sku:'c8000',coins:8000,usd:'9.99'}], i; for(i=0;i<P.length;i++) if(P[i].coins>=need) return P[i]; return P[P.length-1]; }
 var ECO_BUNDLES=[{id:'c500',coins:500,usd:'0.99'},{id:'c1800',coins:1800,usd:'2.99'},{id:'c3500',coins:3500,usd:'4.99'},{id:'c8000',coins:8000,usd:'9.99'}];
 var eco={coins:100,paid:[],noAds:false,starterBought:false,starterUntil:0,clears:0,lastAd:0,interAt:-1};
 var ecoRun={ad:false,paidN:0,earned:0}, ecoWin={add:0,doubled:false}, ecoPass=false, ecoFast=false, ecoToastT=null;
@@ -1749,6 +1857,7 @@ function ovClose(p){ p.hidden=true; if(ovFrom) ovFrom.hidden=false; ovFrom=null;
 function ecoRefresh(){
   var h='Coins <b>'+eco.coins+'</b>';
   $e('coinsL').innerHTML=h; $e('shopC').innerHTML=h;
+  if(st==='dead'){ ecoDeadCoins(); ecoContButtons(); }
 }
 /* mock ad: a countdown panel. A rewarded ad pays only if the player waits for the end. */
 function mockAd(rewarded,done){
@@ -1772,7 +1881,8 @@ window.IbexEcon={
   buy:mockBuy,
   state:function(){ return eco; }
 };
-function ecoAd(kind,done){ var f=window.IbexEcon&&window.IbexEcon.ads&&window.IbexEcon.ads[kind]; if(f) f(done); else done(false); }
+/* any completed ad (rewarded or interstitial) starts the quiet gap before the next forced ad */
+function ecoAd(kind,done){ var f=window.IbexEcon&&window.IbexEcon.ads&&window.IbexEcon.ads[kind]; if(f) f(function(ok){ if(ok){ eco.lastAd=Date.now(); ecoSave(); } done(ok); }); else done(false); }
 function ecoGrant(sku){
   var i;
   for(i=0;i<ECO_BUNDLES.length;i++) if(ECO_BUNDLES[i].id===sku) eco.coins+=ECO_BUNDLES[i].coins;
@@ -1795,6 +1905,7 @@ $e('shopList').addEventListener('click',function(e){
 });
 $e('shopB').addEventListener('click',function(){ ecoShop(); ovOpen(shopP); });
 $e('shopT').addEventListener('click',function(){ ecoShop(); ovOpen(shopP); });
+$e('cShop').addEventListener('click',function(){ ecoShop(); ovOpen(shopP); });
 $e('shopX').addEventListener('click',function(){ ovClose(shopP); ecoRefresh(); });
 function ecoReset(){ ecoRun={ad:false,paidN:0,earned:0}; }
 /* clear: coins by stars (levels 31-60 pay 1.5x), replay pays only the gain; optional rewarded ad doubles it */
@@ -1830,26 +1941,39 @@ winP.addEventListener('click',function(e){
   ecoAd('interstitial',function(){ eco.lastAd=Date.now(); eco.interAt=eco.clears; ecoSave(); ecoPass=true; b.click(); });
 },true);
 /* death: endless pays 1 coin per 10 m (max 60 a run); offer continue for deaths a continue can fix */
+function ecoDeadCoins(){
+  $e('dC').innerHTML=LV?('Coins <b>'+eco.coins+'</b>'):('Coins <b>+'+ecoRun.earned+'</b> / total '+eco.coins);
+}
+/* continue buttons for the dead panel; also re-run when coins change (shop, purchase) */
+function ecoContButtons(){
+  var can=(deadWhy==='Caught'||deadWhy==='Fell'||deadWhy==='Hit by rockfall'||deadWhy==='Swept away'), cAd=$e('cAd'), cCoin=$e('cCoin'), cost, pk;
+  cAd.hidden=!(can&&!ecoRun.ad); cCoin.hidden=true;
+  if(can&&ecoRun.ad&&(!LV||lv>=ECO_CONT_FROM)){
+    cost=ecoCost(ecoRun.paidN); cCoin.hidden=false;
+    if(eco.coins>=cost) cCoin.textContent='Continue: '+cost+' coins';
+    else{ pk=ecoPackFor(cost-eco.coins); cCoin.textContent='Get '+pk.coins+' coins (USD '+pk.usd+') and continue'; }
+  }
+}
+/* death: endless pays 1 coin per 10 m (max 60 a run); offer continue for deaths a continue can fix */
 function ecoDeadHook(reason,m){
-  var can=(reason==='Caught'||reason==='Fell'||reason==='Hit by rockfall'||reason==='Swept away'), add, cost, cAd=$e('cAd'), cCoin=$e('cCoin');
+  var add;
   if(!LV){
     add=Math.min(60,Math.floor(m/10))-ecoRun.earned;
     if(add>0){ eco.coins+=add; ecoRun.earned+=add; ecoSave(); }
-    $e('dC').innerHTML='Coins <b>+'+ecoRun.earned+'</b> / total '+eco.coins;
-  }else $e('dC').innerHTML='Coins <b>'+eco.coins+'</b>';
-  cAd.hidden=!(can&&!ecoRun.ad); cCoin.hidden=true;
-  if(can&&ecoRun.ad&&(!LV||lv>=ECO_CONT_FROM)&&ecoRun.paidN<ECO_CONT.length){
-    cost=ECO_CONT[ecoRun.paidN]; cCoin.hidden=false;
-    cCoin.textContent=eco.coins>=cost?('Continue: '+cost+' coins'):('Rescue pack USD 0.99: +'+ECO_RESCUE+' coins and continue');
   }
   ecoRefresh();
 }
 /* put the ibex back on the last ledge it landed on; the leopard drops to a ledge about two screens below; hazards in flight clear */
-function ecoContinue(){
-  if(st!=='dead') return;
-  var i, k, L, best=null, bd=1e9, d, o, want, keep, used=[];
+/* the ledge a continue puts the ibex back on (null if none): checked before any purchase so a pack is never sold for a continue that cannot happen */
+function ecoBestLedge(){
+  var i, L, best=null, bd=1e9, d;
   for(i=0;i<ledges.length;i++){ L=ledges[i]; if(!L.alive) continue; d=Math.abs(L.y-g.lastLedgeY)*10+Math.abs(L.x+L.w/2-g.x)*0.01+(L.y>g.lastLedgeY+5?1e5:0); if(d<bd){ bd=d; best=L; } }
-  if(!best) return;
+  return best;
+}
+function ecoContinue(){
+  if(st!=='dead') return false;
+  var i, k, L, best=ecoBestLedge(), bd=1e9, d, o, want, keep, used=[];
+  if(!best) return false;
   d=Math.min(14,best.w/2);
   g.x=Math.max(best.x+d,Math.min(best.x+best.w-d,g.x)); g.y=best.y; g.prevY=best.y; g.vx=0; g.vy=0; g.ground=best; g.lastLedgeY=best.y; idle=0; aim=null;
   if(best.type===1&&best.tm>=0) best.tm=Math.max(best.tm,1.0);
@@ -1865,16 +1989,25 @@ function ecoContinue(){
   rocks=[]; avas=[]; if(typeof avaT==='number') avaT=Math.max(avaT,2.5);
   showOnly(null); st='play';
   buzz([20,30,20]);
+  return true;
 }
 $e('cAd').addEventListener('click',function(){
   if(st!=='dead'||ecoRun.ad) return;
-  ecoAd('rewarded',function(ok){ if(!ok||st!=='dead') return; ecoRun.ad=true; ecoContinue(); });
+  ecoAd('rewarded',function(ok){ if(!ok||st!=='dead') return; if(ecoContinue()) ecoRun.ad=true; else ecoToast('Could not continue, try Retry'); });
 });
+/* paid continue: the coins are taken only after the ibex is back on its ledge, and a pack is only sold when it covers the price */
 $e('cCoin').addEventListener('click',function(){
   if(st!=='dead') return;
-  var cost=ECO_CONT[ecoRun.paidN];
-  if(eco.coins>=cost){ eco.coins-=cost; ecoRun.paidN++; ecoSave(); ecoRefresh(); ecoContinue(); return; }
-  ecoBuy('rescue',function(ok){ if(!ok) return; eco.coins-=cost; ecoRun.paidN++; ecoSave(); ecoRefresh(); ecoContinue(); });
+  var cost=ecoCost(ecoRun.paidN), pk;
+  if(!ecoBestLedge()){ ecoToast('Could not continue, no charge'); return; }
+  function pay(){
+    if(eco.coins<cost){ ecoContButtons(); return; }
+    if(!ecoContinue()){ ecoToast('Could not continue, no charge'); return; }
+    eco.coins-=cost; ecoRun.paidN++; ecoSave(); ecoRefresh();
+  }
+  if(eco.coins>=cost){ pay(); return; }
+  pk=ecoPackFor(cost-eco.coins);
+  ecoBuy(pk.sku,function(ok){ if(!ok){ ecoContButtons(); return; } pay(); });
 });
 function econReset(){ ecoReset(); }
 function econWin(n){ ecoWinHook(n); }
